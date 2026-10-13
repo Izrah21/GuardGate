@@ -2,9 +2,10 @@ import os
 import time
 import logging
 import uuid
+import threading
 import cv2
 import numpy as np
-from flask import Flask, render_template_string, Response, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template_string, request, jsonify, redirect, url_for, session
 from supabase import create_client, Client
 
 # Import blueprint galing sa guard.py
@@ -17,6 +18,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key-please-change'
+app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 
 # I-register ang guard_bp para ma-call ang guard.py sa port 5000
 app.register_blueprint(guard_bp)
@@ -35,29 +37,55 @@ os.makedirs(FACE_DIR, exist_ok=True)
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 visitor_map = {}
 is_trained = False
-cooldown_timer = 0
-current_unrecognized_frame = None
+cv_lock = threading.Lock()
 
 # Timer delay configuration (2.5 seconds hold before triggering Time In/Out)
 VERIFICATION_DELAY = 2.5
-detected_face_start_time = None
-current_verifying_id = None
-last_face_seen_time = 0
+COOLDOWN_SECONDS = 5
+FACE_LOST_RESET = 1.5
+CLIENT_TTL = 600
+DEFAULT_STATUS_TEXT = "System Active: Scanning for registered visitors..."
 
-system_status = {
-    "text": "System Active: Scanning for registered visitors...", 
-    "status": "normal",
-    "unknown_detected": False,
-    "face_detected": False
-}
+client_states = {}
+client_states_lock = threading.Lock()
+
+def new_client_state():
+    return {
+        "cooldown_timer": 0,
+        "detected_face_start_time": None,
+        "current_verifying_id": None,
+        "last_face_seen_time": 0,
+        "last_active": time.time(),
+        "system_status": {
+            "text": DEFAULT_STATUS_TEXT,
+            "status": "normal",
+            "unknown_detected": False,
+            "face_detected": False
+        }
+    }
+
+def get_client_state(client_id):
+    now = time.time()
+    with client_states_lock:
+        stale = [k for k, v in client_states.items() if now - v["last_active"] > CLIENT_TTL]
+        for key in stale:
+            del client_states[key]
+        state = client_states.get(client_id)
+        if state is None:
+            state = new_client_state()
+            client_states[client_id] = state
+        state["last_active"] = now
+        return state
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 cascade_path = os.path.join(script_dir, 'haarcascade_frontalface_default.xml')
+if not os.path.exists(cascade_path):
+    cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_default.xml')
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
 def load_recognizer_training():
-    global visitor_map, is_trained, recognizer
-    visitor_map = {}
+    global visitor_map, is_trained
+    new_map = {}
     faces_train = []
     ids_train = []
     current_id = 0
@@ -67,7 +95,9 @@ def load_recognizer_training():
         visitors = response.data
 
         if not visitors:
-            is_trained = False
+            with cv_lock:
+                visitor_map = {}
+                is_trained = False
             return
 
         for row in visitors:
@@ -89,27 +119,31 @@ def load_recognizer_training():
                 if img is not None:
                     faces_train.append(cv2.resize(img, (200, 200)))
                     ids_train.append(current_id)
-                    visitor_map[current_id] = {
-   "Student_ID": s_id,
-   "Name": row["normalized_name"],
-   "College": row["college"],
-   "Course": row["course_year"]
+                    new_map[current_id] = {
+                        "Student_ID": s_id,
+                        "Name": row["normalized_name"],
+                        "College": row["college"],
+                        "Course": row["course_year"]
                     }
                     current_id += 1
 
-        if faces_train:
-            recognizer.train(faces_train, np.array(ids_train))
-            is_trained = True
-        else:
-            is_trained = False
+        with cv_lock:
+            if faces_train:
+                recognizer.train(faces_train, np.array(ids_train))
+                visitor_map = new_map
+                is_trained = True
+            else:
+                visitor_map = {}
+                is_trained = False
     except Exception as e:
         logging.error(f"Error loading training data from Supabase: {e}")
-        is_trained = False
+        with cv_lock:
+            is_trained = False
 
 load_recognizer_training()
 
-def process_auto_attendance(visitor):
-    global cooldown_timer, system_status
+def process_auto_attendance(visitor, state):
+    system_status = state["system_status"]
     s_id = visitor["Student_ID"]
     name = visitor["Name"]
     college = visitor["College"]
@@ -124,7 +158,7 @@ def process_auto_attendance(visitor):
             action = "Time Out"
 
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        
+
         supabase.table("logs").insert({
             "student_id": s_id,
             "normalized_name": name,
@@ -137,102 +171,98 @@ def process_auto_attendance(visitor):
         system_status["text"] = f"SUCCESS ({action}): {name} | ID: {s_id}"
         system_status["status"] = "success"
         system_status["unknown_detected"] = False
-        
-        cooldown_timer = time.time() + 5
+
+        state["cooldown_timer"] = time.time() + COOLDOWN_SECONDS
     except Exception as e:
         logging.error(f"Error processing attendance in Supabase: {e}")
 
-def generate_frames():
-    global current_unrecognized_frame, system_status, cooldown_timer
-    global detected_face_start_time, current_verifying_id, last_face_seen_time
+def reset_verification(state):
+    state["detected_face_start_time"] = None
+    state["current_verifying_id"] = None
 
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
+def analyze_frame(frame, state):
+    system_status = state["system_status"]
+    frame_h, frame_w = frame.shape[:2]
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        display_frame = cv2.flip(frame, 1)
-        gray = cv2.cvtColor(display_frame, cv2.COLOR_BGR2GRAY)
+    with cv_lock:
         faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
 
-        current_time = time.time()
-        has_face = len(faces) > 0
-        system_status["face_detected"] = has_face
+    current_time = time.time()
+    has_face = len(faces) > 0
+    system_status["face_detected"] = has_face
+    box = None
 
-        if has_face:
-            last_face_seen_time = current_time
-            (x, y, w, h) = faces[0]
-            face_roi = cv2.resize(gray[y:y+h, x:x+w], (200, 200))
-            current_unrecognized_frame = display_frame.copy()
+    if has_face:
+        state["last_face_seen_time"] = current_time
+        (x, y, w, h) = [int(v) for v in faces[0]]
+        face_roi = cv2.resize(gray[y:y+h, x:x+w], (200, 200))
+        box = {
+            "x": x / frame_w,
+            "y": y / frame_h,
+            "w": w / frame_w,
+            "h": h / frame_h,
+            "color": "amber",
+            "label": "",
+            "progress": None
+        }
 
-            if is_trained:
+        if is_trained:
+            with cv_lock:
                 label_id, confidence = recognizer.predict(face_roi)
-                if confidence < 100 and label_id in visitor_map:
-                    visitor = visitor_map[label_id]
-                    visitor_id = visitor["Student_ID"]
-                    visitor_first_name = visitor["Name"].split(",")[0]
+                visitor = visitor_map.get(label_id)
 
-                    cv2.rectangle(display_frame, (x, y), (x + w, y + h), (34, 197, 94), 2)
+            if confidence < 100 and visitor is not None:
+                visitor_id = visitor["Student_ID"]
+                visitor_first_name = visitor["Name"].split(",")[0]
+                box["color"] = "green"
 
-                    if current_time < cooldown_timer:
-                        detected_face_start_time = None
-                        current_verifying_id = None
-                        cv2.putText(display_frame, f"{visitor_first_name} (Recorded)", (x, max(25, y - 10)),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (34, 197, 94), 2)
-                    else:
-                        if current_verifying_id != visitor_id or detected_face_start_time is None:
-                            current_verifying_id = visitor_id
-                            detected_face_start_time = current_time
-
-                        elapsed = current_time - detected_face_start_time
-                        remaining = max(0.0, VERIFICATION_DELAY - elapsed)
-
-                        if elapsed < VERIFICATION_DELAY:
-                            progress = min(1.0, elapsed / VERIFICATION_DELAY)
-                            bar_w = int(w * progress)
-                            cv2.rectangle(display_frame, (x, y + h + 8), (x + w, y + h + 15), (40, 40, 40), -1)
-                            cv2.rectangle(display_frame, (x, y + h + 8), (x + bar_w, y + h + 15), (34, 197, 94), -1)
-                            cv2.putText(display_frame, f"Hold still: {remaining:.1f}s", (x, max(25, y - 10)),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (34, 197, 94), 2)
-
-                            system_status["text"] = f"Face Detected: {visitor['Name']} : Hold still ({remaining:.1f}s)..."
-                            system_status["status"] = "verifying"
-                            system_status["unknown_detected"] = False
-                        else:
-                            process_auto_attendance(visitor)
-                            detected_face_start_time = None
-                            current_verifying_id = None
+                if current_time < state["cooldown_timer"]:
+                    reset_verification(state)
+                    box["label"] = f"{visitor_first_name} (Recorded)"
                 else:
-                    detected_face_start_time = None
-                    current_verifying_id = None
-                    cv2.rectangle(display_frame, (x, y), (x + w, y + h), (225, 29, 72), 2)
-                    cv2.putText(display_frame, "Unrecognized", (x, max(25, y - 10)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (225, 29, 72), 2)
-                    system_status["text"] = "Unrecognized Face Detected : Please Register"
-                    system_status["status"] = "error"
-                    system_status["unknown_detected"] = True
+                    if state["current_verifying_id"] != visitor_id or state["detected_face_start_time"] is None:
+                        state["current_verifying_id"] = visitor_id
+                        state["detected_face_start_time"] = current_time
+
+                    elapsed = current_time - state["detected_face_start_time"]
+                    remaining = max(0.0, VERIFICATION_DELAY - elapsed)
+
+                    if elapsed < VERIFICATION_DELAY:
+                        box["progress"] = min(1.0, elapsed / VERIFICATION_DELAY)
+                        box["label"] = f"Hold still: {remaining:.1f}s"
+
+                        system_status["text"] = f"Face Detected: {visitor['Name']} : Hold still ({remaining:.1f}s)..."
+                        system_status["status"] = "verifying"
+                        system_status["unknown_detected"] = False
+                    else:
+                        process_auto_attendance(visitor, state)
+                        reset_verification(state)
+                        box["label"] = f"{visitor_first_name} (Recorded)"
             else:
-                detected_face_start_time = None
-                current_verifying_id = None
-                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (245, 158, 11), 2)
-                system_status["text"] = "Database is empty. Please register your face."
-                system_status["status"] = "warning"
+                reset_verification(state)
+                box["color"] = "red"
+                box["label"] = "Unrecognized"
+                system_status["text"] = "Unrecognized Face Detected : Please Register"
+                system_status["status"] = "error"
                 system_status["unknown_detected"] = True
         else:
-            if current_time - last_face_seen_time > 0.6:
-                detected_face_start_time = None
-                current_verifying_id = None
+            reset_verification(state)
+            system_status["text"] = "Database is empty. Please register your face."
+            system_status["status"] = "warning"
+            system_status["unknown_detected"] = True
+    else:
+        if current_time - state["last_face_seen_time"] > FACE_LOST_RESET:
+            reset_verification(state)
 
-            if not system_status["unknown_detected"] and current_time > cooldown_timer + 2:
-                system_status["text"] = "System Active: Scanning for registered visitors..."
-                system_status["status"] = "normal"
-                system_status["unknown_detected"] = False
+        if not system_status["unknown_detected"] and current_time > state["cooldown_timer"] + 2:
+            system_status["text"] = DEFAULT_STATUS_TEXT
+            system_status["status"] = "normal"
+            system_status["unknown_detected"] = False
 
-        ret, buffer = cv2.imencode('.jpg', display_frame)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+    result = dict(system_status)
+    result["box"] = box
+    return result
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -307,7 +337,8 @@ HTML_TEMPLATE = """
 
                 <!-- SCANNER VIEWPORT -->
                 <div id="camera-container" class="relative bg-slate-900 w-full aspect-video min-h-0 flex justify-center items-center overflow-hidden transition-all duration-500 ease-in-out max-h-[600px] opacity-100 scale-100">
-                    <img src="{{ url_for('video_feed') }}" class="object-cover h-full w-full opacity-95">
+                    <video id="webcam" autoplay playsinline muted class="object-cover h-full w-full opacity-95 -scale-x-100"></video>
+                    <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
 
                     <!-- REGISTER BUTTON -->
                     <button id="register-btn" onclick="openModal()" class="hidden absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-md text-emerald-800 font-semibold text-xs py-2.5 sm:py-3 px-6 sm:px-8 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-emerald-200/80 hover:bg-emerald-50 hover:scale-105 transition-all duration-200 ease-out z-10 flex items-center gap-2 whitespace-nowrap">
@@ -500,7 +531,7 @@ HTML_TEMPLATE = """
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        let noFaceSeconds = 0;
+        let lastFaceTime = Date.now();
         let isCameraHidden = false;
 
         // Custom non-blocking toast notifications (Replaces window.alert - NO 'localhost says')
@@ -603,37 +634,31 @@ HTML_TEMPLATE = """
             }
         }
 
-        // Live status poller
-        function fetchStatus() {
-            fetch('/status')
-                .then(response => response.json())
-                .then(data => {
-                    const panel = document.getElementById('status-panel');
-                    panel.innerText = data.text;
-                    
-                    let bgClass = 'bg-emerald-50/50', textClass = 'text-emerald-800', borderClass = 'border-emerald-900/10';
-                    if (data.status === 'success') {
+        function applyStatus(data) {
+            const panel = document.getElementById('status-panel');
+            panel.innerText = data.text;
+            
+            let bgClass = 'bg-emerald-50/50', textClass = 'text-emerald-800', borderClass = 'border-emerald-900/10';
+            if (data.status === 'success') {
    bgClass = 'bg-emerald-100/90'; textClass = 'text-emerald-950 font-bold'; borderClass = 'border-emerald-300';
-                    } else if (data.status === 'verifying') {
+            } else if (data.status === 'verifying') {
    bgClass = 'bg-emerald-100/60 animate-pulse'; textClass = 'text-emerald-900 font-semibold'; borderClass = 'border-emerald-300';
-                    } else if (data.status === 'error') {
+            } else if (data.status === 'error') {
    bgClass = 'bg-rose-50'; textClass = 'text-rose-700 font-semibold'; borderClass = 'border-rose-200';
-                    } else if (data.status === 'warning') {
+            } else if (data.status === 'warning') {
    bgClass = 'bg-amber-50'; textClass = 'text-amber-800 font-semibold'; borderClass = 'border-amber-200';
-                    }
-                    
-                    panel.className = `shrink-0 px-4 py-3 text-center text-sm font-medium transition-colors duration-300 border-t ${bgClass} ${textClass} ${borderClass}`;
-                    
-                    const regBtn = document.getElementById('register-btn');
-                    if (data.unknown_detected) {
+            }
+            
+            panel.className = `shrink-0 px-4 py-3 text-center text-sm font-medium transition-colors duration-300 border-t ${bgClass} ${textClass} ${borderClass}`;
+            
+            const regBtn = document.getElementById('register-btn');
+            if (data.unknown_detected) {
    regBtn.classList.remove('hidden');
-                    } else {
+            } else {
    regBtn.classList.add('hidden');
-                    }
+            }
 
-                    handleCameraVisibility(data.face_detected);
-                })
-                .catch(() => {});
+            handleCameraVisibility(data.face_detected);
         }
 
         function handleCameraVisibility(faceDetected) {
@@ -641,7 +666,7 @@ HTML_TEMPLATE = """
             const standbyContainer = document.getElementById('standby-container');
 
             if (faceDetected) {
-                noFaceSeconds = 0;
+                lastFaceTime = Date.now();
 
                 if (isCameraHidden) {
                     isCameraHidden = false;
@@ -651,9 +676,7 @@ HTML_TEMPLATE = """
                 }
             } else {
                 if (!isCameraHidden) {
-                    noFaceSeconds++;
-
-                    if (noFaceSeconds >= 5) {
+                    if (Date.now() - lastFaceTime >= 5000) {
    isCameraHidden = true;
    cameraContainer.classList.remove('max-h-[600px]', 'opacity-100', 'scale-100');
    cameraContainer.classList.add('max-h-0', 'opacity-0', 'scale-95', 'pointer-events-none');
@@ -667,7 +690,138 @@ HTML_TEMPLATE = """
             }
         }
 
-        setInterval(fetchStatus, 1000);
+        const clientId = (function () {
+            let id = null;
+            try { id = sessionStorage.getItem('gg_client_id'); } catch (e) {}
+            if (!id) {
+                id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+                try { sessionStorage.setItem('gg_client_id', id); } catch (e) {}
+            }
+            return id;
+        })();
+
+        const video = document.getElementById('webcam');
+        const overlay = document.getElementById('overlay');
+        const sampler = document.createElement('canvas');
+        const ANALYZE_INTERVAL_MS = 450;
+        const SAMPLE_WIDTH = 640;
+        const BOX_COLORS = { green: '#22c55e', red: '#e11d48', amber: '#f59e0b' };
+        let lastFaceBlob = null;
+
+        function showCameraError(message) {
+            document.getElementById('status-panel').innerText = message;
+            showToast(message, 'error', 8000);
+        }
+
+        async function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showCameraError('Camera is not available. Open this page over HTTPS in a modern browser.');
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                video.srcObject = stream;
+                await video.play();
+                analyzeLoop();
+            } catch (err) {
+                if (err && err.name === 'NotAllowedError') {
+                    showCameraError('Camera permission was denied. Allow camera access and reload the page.');
+                } else if (err && err.name === 'NotFoundError') {
+                    showCameraError('No camera was found on this device.');
+                } else {
+                    showCameraError('Could not start the camera: ' + (err && err.message ? err.message : err));
+                }
+            }
+        }
+
+        function captureFrame() {
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            if (!vw || !vh) return Promise.resolve(null);
+
+            const scale = Math.min(1, SAMPLE_WIDTH / vw);
+            sampler.width = Math.round(vw * scale);
+            sampler.height = Math.round(vh * scale);
+
+            const ctx = sampler.getContext('2d');
+            ctx.save();
+            ctx.translate(sampler.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
+            ctx.restore();
+
+            return new Promise(resolve => sampler.toBlob(resolve, 'image/jpeg', 0.85));
+        }
+
+        async function sendFrame() {
+            const blob = await captureFrame();
+            if (!blob) return;
+
+            const body = new FormData();
+            body.append('client_id', clientId);
+            body.append('frame', blob, 'frame.jpg');
+
+            const res = await fetch('/analyze', { method: 'POST', body: body });
+            if (!res.ok) return;
+
+            const data = await res.json();
+            if (data.face_detected) lastFaceBlob = blob;
+            applyStatus(data);
+            drawOverlay(data.box);
+        }
+
+        async function analyzeLoop() {
+            while (true) {
+                const started = Date.now();
+                try { await sendFrame(); } catch (e) {}
+                const wait = Math.max(0, ANALYZE_INTERVAL_MS - (Date.now() - started));
+                await new Promise(resolve => setTimeout(resolve, wait));
+            }
+        }
+
+        function drawOverlay(box) {
+            const w = overlay.clientWidth;
+            const h = overlay.clientHeight;
+            if (overlay.width !== w) overlay.width = w;
+            if (overlay.height !== h) overlay.height = h;
+
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, w, h);
+            if (!box || !w || !h || !video.videoWidth) return;
+
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            const scale = Math.max(w / vw, h / vh);
+            const offsetX = (w - vw * scale) / 2;
+            const offsetY = (h - vh * scale) / 2;
+            const x = offsetX + box.x * vw * scale;
+            const y = offsetY + box.y * vh * scale;
+            const bw = box.w * vw * scale;
+            const bh = box.h * vh * scale;
+            const color = BOX_COLORS[box.color] || BOX_COLORS.amber;
+
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = color;
+            ctx.strokeRect(x, y, bw, bh);
+
+            if (box.progress !== null && box.progress !== undefined) {
+                ctx.fillStyle = 'rgba(40, 40, 40, 0.9)';
+                ctx.fillRect(x, y + bh + 8, bw, 7);
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y + bh + 8, bw * box.progress, 7);
+            }
+
+            if (box.label) {
+                ctx.font = '600 13px sans-serif';
+                ctx.fillStyle = color;
+                ctx.fillText(box.label, x, Math.max(18, y - 8));
+            }
+        }
+
+        startCamera();
 
         function openModal() {
             document.getElementById('cancel-confirm-box').classList.add('hidden');
@@ -703,6 +857,7 @@ HTML_TEMPLATE = """
             event.preventDefault();
             const form = document.getElementById('reg-form');
             const formData = new FormData(form);
+            if (lastFaceBlob) formData.append('frame', lastFaceBlob, 'face.jpg');
             const btn = document.getElementById('submit-btn');
             const originalBtnHtml = btn.innerHTML;
             
@@ -843,17 +998,26 @@ def logout():
 
 # ==================== End New Routes ====================
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    client_id = request.form.get('client_id', '').strip()[:64]
+    upload = request.files.get('frame')
+    if not client_id or upload is None:
+        return jsonify({"error": "Missing frame or client id."}), 400
 
-@app.route('/status')
-def status():
-    return jsonify(system_status)
+    frame = cv2.imdecode(np.frombuffer(upload.read(), np.uint8), cv2.IMREAD_COLOR)
+    if frame is None:
+        return jsonify({"error": "Invalid image."}), 400
+
+    try:
+        state = get_client_state(client_id)
+        return jsonify(analyze_frame(frame, state))
+    except Exception as e:
+        logging.error(f"Frame analysis error: {e}")
+        return jsonify({"error": "Frame analysis failed."}), 500
 
 @app.route('/register', methods=['POST'])
 def register():
-    global current_unrecognized_frame
     try:
         user_type = request.form.get('user_type', 'Student').strip()
         surname = request.form.get('surname', '').strip()
@@ -904,12 +1068,17 @@ def register():
             if not student_id or not college or not course:
                 return jsonify({"success": False, "message": "Student ID, College, and Course & Year are required!"}), 400
 
-        if current_unrecognized_frame is None:
+        upload = request.files.get('frame')
+        if upload is None:
             return jsonify({"success": False, "message": "No face frame captured. Please position yourself in front of the camera."}), 400
+
+        captured_frame = cv2.imdecode(np.frombuffer(upload.read(), np.uint8), cv2.IMREAD_COLOR)
+        if captured_frame is None:
+            return jsonify({"success": False, "message": "Failed to process image frame."}), 400
 
         normalized_name = f"{surname}, {fname}, {mname or 'N/A'}, {suffix}"
         
-        success, encoded_img = cv2.imencode('.jpg', current_unrecognized_frame)
+        success, encoded_img = cv2.imencode('.jpg', captured_frame)
         if not success:
             return jsonify({"success": False, "message": "Failed to process image frame."}), 500
         
