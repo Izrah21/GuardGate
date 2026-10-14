@@ -7,8 +7,10 @@ import cv2
 import numpy as np
 from flask import Flask, render_template_string, request, jsonify, redirect, url_for, session
 from supabase import create_client, Client
+from supabase_auth import datetime
+from datetime import datetime, timezone, timedelta
 
-# Import blueprint galing sa guard.py
+
 from guard import guard_bp
 
 SUPABASE_URL = "https://qciehqzajzaejhsjzrdm.supabase.co"
@@ -157,7 +159,8 @@ def process_auto_attendance(visitor, state):
         if user_logs and user_logs[-1]["action"] == "Time In":
             action = "Time Out"
 
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        ph_tz = timezone(timedelta(hours=8))
+        timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
 
         supabase.table("logs").insert({
             "student_id": s_id,
@@ -1119,7 +1122,8 @@ def register():
             "image_path": public_url
         }).execute()
 
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        ph_tz = timezone(timedelta(hours=8))
+        timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
         supabase.table("logs").insert({
             "student_id": student_id,
             "normalized_name": normalized_name,

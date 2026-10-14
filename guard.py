@@ -6,6 +6,8 @@ from collections import OrderedDict
 from datetime import datetime
 from flask import Blueprint, render_template_string, request, jsonify, send_file
 from supabase import create_client, Client
+from flask import session, redirect, abort
+from datetime import datetime, timezone, timedelta
 
 guard_bp = Blueprint('guard_bp', __name__)
 
@@ -374,20 +376,24 @@ HTML_GUARD_STATION = """
         });
 
         function manualTime(id, action) {
-            fetch('/api/logs/manual', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ student_id: id, action: action })
-            })
-            .then(r => r.json())
-            .then(data => {
-                showToast(data.message || `${action} recorded successfully!`, 'success');
-                fetchLogs();
-            })
-            .catch(() => {
-                showToast(`Failed to record ${action}.`, 'error');
-            });
+        fetch('/api/logs/manual', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ student_id: id, action: action })
+        })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+        if (!ok) {
+            showToast(data.message || `Failed to record ${action}.`, 'error');
+        } else {
+            showToast(data.message || `${action} recorded successfully!`, 'success');
+            fetchLogs();
         }
+        })
+        .catch(() => {
+        showToast(`Failed to record ${action}.`, 'error');
+        });
+    }
 
         // ---------- PDF export ----------
         const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -500,7 +506,7 @@ HTML_GUARD_STATION = """
                 const from = getExportPeriod('export-from');
                 const to = getExportPeriod('export-to');
                 if (from > to) {
-                    showExportError('The start month cannot be later than the end month.');
+                    showExportError('no no no bad!');
                     return;
                 }
                 params.set('from', from);
@@ -724,8 +730,10 @@ HTML_GUARD_STATION = """
             <form id="edit-form" onsubmit="saveStudentEdit(event)" novalidate class="flex flex-col min-h-0">
                 <input type="hidden" id="edit-id">
 
+                <!-- MODIFIED GRID LAYOUT STARTS HERE -->
                 <div class="px-6 py-5 space-y-5 overflow-y-auto min-h-0">
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Display fields -->
                         <div class="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5">
                             <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ID Number</p>
                             <p id="edit-display-id" class="text-sm font-semibold text-slate-900 mt-0.5 break-all"></p>
@@ -734,27 +742,29 @@ HTML_GUARD_STATION = """
                             <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Category</p>
                             <p id="edit-display-category" class="text-sm font-semibold text-slate-900 mt-0.5"></p>
                         </div>
-                    </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label for="edit-name" class="text-xs font-semibold text-slate-700">Full Name <span class="text-rose-600">*</span></label>
-                            <span id="edit-name-count" class="text-[11px] text-slate-400">0/120</span>
+                        <!-- Aligned Inputs matching app.py styling -->
+                        <div class="space-y-1.5 md:col-span-2 mt-2">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label for="edit-name" class="text-xs font-semibold text-slate-700">Full Name <span class="text-rose-600">*</span></label>
+                                <span id="edit-name-count" class="text-[11px] text-slate-400">0/120</span>
+                            </div>
+                            <input type="text" id="edit-name" maxlength="120" autocomplete="off" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                            <p class="text-[11px] text-slate-500 mt-1.5">Format: Surname, First Name, Middle Name, Suffix</p>
+                            <p id="edit-name-error" role="alert" class="hidden text-[11px] font-medium text-rose-600"></p>
                         </div>
-                        <input type="text" id="edit-name" maxlength="120" autocomplete="off" oninput="onEditInput()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
-                        <p class="text-[11px] text-slate-500 mt-1.5">Format: Surname, First Name, Middle Name, Suffix</p>
-                        <p id="edit-name-error" role="alert" class="hidden text-[11px] font-medium text-rose-600 mt-1.5"></p>
-                    </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label for="edit-course" class="text-xs font-semibold text-slate-700">Course &amp; Year / Department / Address <span class="text-rose-600">*</span></label>
-                            <span id="edit-course-count" class="text-[11px] text-slate-400">0/120</span>
+                        <div class="space-y-1.5 md:col-span-2">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label for="edit-course" class="text-xs font-semibold text-slate-700">Course &amp; Year / Department / Address <span class="text-rose-600">*</span></label>
+                                <span id="edit-course-count" class="text-[11px] text-slate-400">0/120</span>
+                            </div>
+                            <input type="text" id="edit-course" maxlength="120" autocomplete="off" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                            <p id="edit-course-error" role="alert" class="hidden text-[11px] font-medium text-rose-600"></p>
                         </div>
-                        <input type="text" id="edit-course" maxlength="120" autocomplete="off" oninput="onEditInput()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
-                        <p id="edit-course-error" role="alert" class="hidden text-[11px] font-medium text-rose-600 mt-1.5"></p>
                     </div>
                 </div>
+                <!-- MODIFIED GRID LAYOUT ENDS HERE -->
 
                 <div class="shrink-0 px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center gap-3">
                     <p id="edit-state" class="mr-auto text-[11px] font-medium text-slate-400">No changes yet</p>
@@ -886,30 +896,65 @@ def get_logs():
 
 @guard_bp.route('/api/students/edit', methods=['POST'])
 def edit_student():
-    data = request.json
-    s_id = data.get('student_id')
-    normalized_name = data.get('normalized_name')
-    course_year = data.get('course_year')
+    try:
+        data = request.json
+        s_id = data.get('student_id')
+        normalized_name = data.get('normalized_name', '').strip()
+        course_year = data.get('course_year', '').strip()
 
-    supabase.table("visitors").update({
-        "normalized_name": normalized_name,
-        "course_year": course_year
-    }).eq("student_id", s_id).execute()
+        if not s_id or not normalized_name or not course_year:
+            return jsonify({"message": "Missing required fields."}), 400
 
-    return jsonify({"message": "Student information updated successfully!"})
+        res = supabase.table("visitors").update({
+            "normalized_name": normalized_name,
+            "course_year": course_year
+        }).eq("student_id", s_id).execute()
+
+        if not res.data:
+            return jsonify({"message": "Student not found."}), 404
+
+        return jsonify({"message": "Student information updated successfully!"})
+        
+    except Exception as e:
+        logging.error(f"Failed to update student {s_id}: {e}")
+        return jsonify({"message": "Internal server error. Please try again."}), 500
 
 @guard_bp.route('/api/logs/manual', methods=['POST'])
 def manual_log():
-    data = request.json
+    data = request.json or {}
     s_id = data.get('student_id')
     action = data.get('action')
 
+    if action not in ('Time In', 'Time Out'):
+        return jsonify({"message": "Invalid action requested."}), 400
+
     res = supabase.table("visitors").select("*").eq("student_id", s_id).execute()
     if not res.data:
-        return jsonify({"message": "Student not found."}), 404
+        return jsonify({"message": "Student/Visitor not found."}), 404
 
     student = res.data[0]
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+    last_log_res = supabase.table("logs") \
+        .select("action") \
+        .eq("student_id", s_id) \
+        .order("id", desc=True) \
+        .limit(1) \
+        .execute()
+
+    last_action = last_log_res.data[0]["action"] if last_log_res.data else None
+
+    if action == "Time Out" and last_action != "Time In":
+        return jsonify({
+            "message": f"Cannot Time Out, is not timed in yet."
+        }), 400
+
+    if action == "Time In" and last_action == "Time In":
+        return jsonify({
+            "message": f"Cannot Time In, is already timed in."
+        }), 400
+
+    ph_tz = timezone(timedelta(hours=8))
+    timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
 
     supabase.table("logs").insert({
         "student_id": s_id,
@@ -920,7 +965,7 @@ def manual_log():
         "timestamp": timestamp
     }).execute()
 
-    return jsonify({"message": f"Successfully recorded {action} for {student['normalized_name']}!"})
+    return jsonify({"message": f"Successfully recorded {action}!"})
 
 @guard_bp.route('/api/logs/delete', methods=['POST'])
 def delete_logs():
