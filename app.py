@@ -406,15 +406,15 @@ HTML_TEMPLATE = """
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
-   <input type="text" name="surname" id="field_surname" required placeholder="e.g. Dela Cruz" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <input type="text" name="surname" id="field_surname" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">First Name <span class="text-rose-600">*</span></label>
-   <input type="text" name="fname" id="field_fname" required placeholder="e.g. Juan" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <input type="text" name="fname" id="field_fname" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
    <label id="label_mname" class="block text-xs font-semibold text-slate-700">Middle Name <span class="text-slate-400 font-normal">(Optional)</span></label>
-   <input type="text" name="mname" id="field_mname" placeholder="e.g. Santos" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <input type="text" name="mname" id="field_mname" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div id="group-suffix" class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">Suffix</label>
@@ -428,7 +428,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- STUDENT SECTION: ONLY COLLEGES IN DROPDOWN, STUDENT ID, COURSE & YEAR -->
+                <!-- STUDENT SECTION: COLLEGE DROPDOWN, STUDENT ID, YEAR LEVEL (1-4), COURSE / PROGRAM -->
                 <div id="group-student" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
    <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
@@ -448,11 +448,21 @@ HTML_TEMPLATE = """
                     </div>
                     <div class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">Student ID <span class="text-rose-600">*</span></label>
-   <input type="text" name="student_id" id="field_student_id" required placeholder="e.g. 22-1506" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <input type="text" name="student_id" id="field_student_id" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">Course & Year <span class="text-rose-600">*</span></label>
-   <input type="text" name="course" id="field_course" required placeholder="e.g. BSCS - 3" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Year Level <span class="text-rose-600">*</span></label>
+   <select name="year_level" id="field_year" required class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+       <option value="" disabled selected>Select Year...</option>
+       <option value="1">1</option>
+       <option value="2">2</option>
+       <option value="3">3</option>
+       <option value="4">4</option>
+   </select>
+                    </div>
+                    <div class="space-y-1.5 md:col-span-2">
+   <label class="block text-xs font-semibold text-slate-700">Course / Program <span class="text-rose-600">*</span></label>
+   <input type="text" name="course" id="field_course" required maxlength="40" placeholder="e.g. BSCS" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
@@ -460,7 +470,7 @@ HTML_TEMPLATE = """
                 <div id="group-parent" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
    <label class="block text-xs font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
-   <input type="text" name="parent_address" id="field_parent_address" placeholder="e.g. Barangay 1, San Nicolas, Ilocos Norte" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <input type="text" name="parent_address" id="field_parent_address" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
@@ -483,8 +493,8 @@ HTML_TEMPLATE = """
    </select>
                     </div>
                     <div class="space-y-1.5 md:col-span-2">
-   <label class="block text-xs font-semibold text-slate-700">Department They Teach In <span class="text-rose-600">*</span></label>
-   <input type="text" name="department" id="field_department" placeholder="e.g. Department of Computer Science" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Department<span class="text-rose-600">*</span></label>
+   <input type="text" name="department" id="field_department" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
@@ -492,7 +502,7 @@ HTML_TEMPLATE = """
                 <div id="group-others" class="hidden mt-4 pt-4 border-t border-slate-100">
                     <div class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
-   <input type="text" name="other_address" id="field_other_address" placeholder="e.g. Guest / Delivery / Maintenance Inspection" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <input type="text" name="other_address" id="field_other_address" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
@@ -598,6 +608,7 @@ HTML_TEMPLATE = """
             document.getElementById('field_student_id').required = false;
             document.getElementById('field_college').required = false;
             document.getElementById('field_course').required = false;
+            document.getElementById('field_year').required = false;
             document.getElementById('field_parent_address').required = false;
             document.getElementById('field_department').required = false;
             document.getElementById('field_faculty_college').required = false;
@@ -612,7 +623,8 @@ HTML_TEMPLATE = """
                 document.getElementById('field_student_id').required = true;
                 document.getElementById('field_college').required = true;
                 document.getElementById('field_course').required = true;
-                hintText.innerText = 'Student registration requiring Student ID, College, and Course & Year.';
+                document.getElementById('field_year').required = true;
+                hintText.innerText = 'Student registration requiring Student ID, College, Year Level, and Course.';
             } else if (type === 'Parent') {
                 parentGroup.classList.remove('hidden');
                 suffixGroup.classList.remove('hidden');
@@ -1063,10 +1075,16 @@ def register():
         else:  # Student
             student_id = request.form.get('student_id', '').strip()
             college = request.form.get('college', '').strip()
-            course = request.form.get('course', '').strip()
+            program = request.form.get('course', '').strip().upper()
+            year_level = request.form.get('year_level', '').strip()
 
-            if not student_id or not college or not course:
-                return jsonify({"success": False, "message": "Student ID, College, and Course & Year are required!"}), 400
+            if not student_id or not college or not program or not year_level:
+                return jsonify({"success": False, "message": "Student ID, College, Course, and Year Level are required!"}), 400
+            if year_level not in ('1', '2', '3', '4'):
+                return jsonify({"success": False, "message": "Year Level must be between 1 and 4!"}), 400
+
+            # Same course_year column as before, now built from the structured inputs (e.g. "BSCS - Year 3")
+            course = f"{program} - Year {year_level}"
 
         upload = request.files.get('frame')
         if upload is None:
