@@ -36,6 +36,11 @@ HTML_GUARD_STATION = """
         let selectedLogs = new Set();
         let visibleLogCount = 0;
         let confirmAction = null;
+        let visitorCache = {};
+
+        function escAttr(v) {
+            return String(v === null || v === undefined ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
 
         // Custom non-blocking toast notifications (Eliminates 'localhost says')
         function showToast(message, type = 'success', duration = 4000) {
@@ -91,15 +96,14 @@ HTML_GUARD_STATION = """
                 .then(data => {
                     const tbody = document.getElementById('students-tbody');
                     tbody.innerHTML = '';
+                    visitorCache = {};
+                    data.forEach(s => { visitorCache[s.student_id] = s; });
                     if (data.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No visitor records found.</td></tr>`;
                         return;
                     }
                     data.forEach(s => {
                         const safeId = (s.student_id || '').replace(/'/g, "\\'");
-                        const safeName = (s.normalized_name || '').replace(/'/g, "\\'");
-                        const safeCourse = (s.course_year || '').replace(/'/g, "\\'");
-                        const safeCollege = (s.college || '').replace(/'/g, "\\'");
 
                         let tagClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
                         if (s.college === 'Parent') tagClass = 'bg-purple-50 text-purple-800 border-purple-200';
@@ -113,7 +117,7 @@ HTML_GUARD_STATION = """
                                 <td class="p-3"><span class="border text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${tagClass}">${s.college}</span></td>
                                 <td class="p-3 text-slate-600">${s.course_year || '-'}</td>
                                 <td class="p-3 flex items-center gap-1.5">
-                                    <button onclick="openEditModal('${safeId}', '${safeName}', '${safeCourse}', '${safeCollege}')" class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2.5 py-1 rounded-lg hover:bg-emerald-100 font-medium transition">Edit Info</button>
+                                    <button type="button" data-id="${escAttr(s.student_id)}" onclick="openEditModal(this.dataset.id)" class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2.5 py-1 rounded-lg hover:bg-emerald-100 font-medium transition">Edit Info</button>
                                     <button onclick="manualTime('${safeId}', 'Time In')" class="text-xs bg-emerald-600 text-white px-2.5 py-1 rounded-lg hover:bg-emerald-700 font-medium transition shadow-xs">Time In</button>
                                     <button onclick="manualTime('${safeId}', 'Time Out')" class="text-xs bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg hover:bg-rose-100 font-medium transition">Time Out</button>
                                 </td>
@@ -270,69 +274,176 @@ HTML_GUARD_STATION = """
 
         setInterval(fetchLogs, 3000);
 
-        // ---------- Edit visitor modal ----------
-        const EDIT_MAX = 120;
-        let editOriginal = { name: '', course: '' };
+        // ---------- Edit visitor modal (mirrors the registration form) ----------
+        const EDIT_COLLEGES = ['CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE'];
+        const EDIT_SUFFIXES = ['N/A', 'Jr.', 'Sr.', 'III', 'IV'];
+        const EDIT_GROUPS = {
+            Student: 'edit-group-student',
+            Parent: 'edit-group-parent',
+            Faculty: 'edit-group-faculty',
+            Others: 'edit-group-others'
+        };
+        const EDIT_HINTS = {
+            Student: 'Student record: Student ID, College, Year Level, and Course.',
+            Parent: 'Parent record: requires Surname, First Name, Middle Name, and Address. Suffix is optional.',
+            Faculty: 'Faculty record: requires Name fields, College, and Department.',
+            Others: 'Visitor / Guest record: requires Name fields and Address or Purpose of visit.'
+        };
+        let editSnapshot = '';
         let editTouched = false;
 
-        function openEditModal(id, name, course, college) {
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-name').value = name;
-            document.getElementById('edit-course').value = course;
-            document.getElementById('edit-display-id').innerText = id;
-            document.getElementById('edit-display-category').innerText = college || '-';
-            editOriginal = { name: name.trim(), course: course.trim() };
+        function editVal(id) { return document.getElementById(id).value; }
+        function editSet(id, value) { document.getElementById(id).value = (value === null || value === undefined) ? '' : value; }
+
+        // Rebuild the registration-form fields from a stored visitor row
+        // (name = "Surname, First, Middle|N/A, Suffix"; course_year depends on the category).
+        function parseVisitorRecord(v) {
+            const parts = (v.normalized_name || '').split(',').map(p => p.trim());
+            const info = {
+                type: 'Student',
+                surname: parts[0] || '',
+                fname: parts[1] || '',
+                mname: (parts[2] && parts[2].toUpperCase() !== 'N/A') ? parts[2] : '',
+                suffix: EDIT_SUFFIXES.includes(parts[3]) ? parts[3] : 'N/A',
+                college: '', year: '', program: '', address: '', facultyCollege: '', department: ''
+            };
+            const cy = (v.course_year || '').trim();
+            if (v.college === 'Parent' || v.college === 'Faculty' || v.college === 'Others') info.type = v.college;
+
+            if (info.type === 'Student') {
+                info.college = EDIT_COLLEGES.includes(v.college) ? v.college : '';
+                const m = /^(.*) - Year ([1-4])$/.exec(cy);
+                if (m) { info.program = m[1]; info.year = m[2]; } else { info.program = cy; }
+            } else if (info.type === 'Faculty') {
+                const idx = cy.indexOf(' - ');
+                const fc = idx > -1 ? cy.slice(0, idx) : '';
+                if (EDIT_COLLEGES.includes(fc)) { info.facultyCollege = fc; info.department = cy.slice(idx + 3); }
+                else { info.department = cy; }
+            } else {
+                info.address = cy;
+            }
+            return info;
+        }
+
+        // Only the fields that belong to the selected category are collected (same as registration).
+        function collectEditForm() {
+            const type = document.getElementById('edit-user-type').value;
+            const d = {
+                user_type: type,
+                surname: editVal('edit-surname').trim(),
+                fname: editVal('edit-fname').trim(),
+                mname: editVal('edit-mname').trim(),
+                suffix: editVal('edit-suffix')
+            };
+            if (type === 'Student') {
+                d.college = editVal('edit-college');
+                d.year_level = editVal('edit-year');
+                d.course = editVal('edit-course-program').trim().toUpperCase();
+            } else if (type === 'Parent') {
+                d.parent_address = editVal('edit-parent-address').trim();
+            } else if (type === 'Faculty') {
+                d.faculty_college = editVal('edit-faculty-college');
+                d.department = editVal('edit-department').trim();
+            } else {
+                d.other_address = editVal('edit-other-address').trim();
+            }
+            return d;
+        }
+
+        function applyEditType(type) {
+            Object.keys(EDIT_GROUPS).forEach(t => {
+                document.getElementById(EDIT_GROUPS[t]).classList.toggle('hidden', t !== type);
+            });
+            document.getElementById('edit-mname-label').innerHTML = type === 'Parent'
+                ? 'Middle Name <span class="text-rose-600">*</span>'
+                : 'Middle Name <span class="text-slate-400 font-normal">(Optional)</span>';
+            document.getElementById('edit-type-hint').innerText = EDIT_HINTS[type] || '';
+        }
+
+        function handleEditUserTypeChange(type) {
+            applyEditType(type);
+            clearEditErrors();
             editTouched = false;
-            setFieldError('edit-name', 'edit-name-error', '');
-            setFieldError('edit-course', 'edit-course-error', '');
-            onEditInput();
+            refreshEditState();
+        }
+
+        function openEditModal(id) {
+            const v = visitorCache[id];
+            if (!v) { showToast('Visitor record not found. Please refresh the list.', 'error'); return; }
+            const info = parseVisitorRecord(v);
+
+            editSet('edit-id', id);
+            document.getElementById('edit-display-id').innerText = id;
+            editSet('edit-user-type', info.type);
+            editSet('edit-surname', info.surname);
+            editSet('edit-fname', info.fname);
+            editSet('edit-mname', info.mname);
+            editSet('edit-suffix', info.suffix);
+            editSet('edit-college', info.college);
+            editSet('edit-student-id', id);
+            editSet('edit-year', info.year);
+            editSet('edit-course-program', info.program);
+            editSet('edit-parent-address', info.type === 'Parent' ? info.address : '');
+            editSet('edit-faculty-college', info.facultyCollege);
+            editSet('edit-department', info.department);
+            editSet('edit-other-address', info.type === 'Others' ? info.address : '');
+
+            applyEditType(info.type);
+            clearEditErrors();
+            editTouched = false;
+            editSnapshot = JSON.stringify(collectEditForm());
+            refreshEditState();
             document.getElementById('edit-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('edit-name').focus(), 50);
+            setTimeout(() => document.getElementById('edit-surname').focus(), 50);
         }
 
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
         }
 
-        function setFieldError(inputId, errorId, message) {
+        function clearEditErrors() {
+            document.querySelectorAll('#edit-form .field-err').forEach(el => el.remove());
+            document.querySelectorAll('#edit-form input, #edit-form select').forEach(el => {
+                el.classList.remove('border-rose-400');
+                if (!el.readOnly && el.type !== 'hidden') el.classList.add('border-slate-300');
+            });
+        }
+
+        function setEditError(inputId, message) {
             const input = document.getElementById(inputId);
-            const err = document.getElementById(errorId);
-            const okClasses = ['border-slate-300', 'focus:border-emerald-600', 'focus:ring-emerald-500/20'];
-            const badClasses = ['border-rose-400', 'focus:border-rose-500', 'focus:ring-rose-500/20'];
-            if (message) {
-                err.innerText = message;
-                err.classList.remove('hidden');
-                input.classList.remove(...okClasses);
-                input.classList.add(...badClasses);
-            } else {
-                err.classList.add('hidden');
-                input.classList.remove(...badClasses);
-                input.classList.add(...okClasses);
-            }
+            input.classList.remove('border-slate-300');
+            input.classList.add('border-rose-400');
+            const err = document.createElement('p');
+            err.className = 'field-err text-[11px] font-medium text-rose-600 mt-1';
+            err.innerText = message;
+            input.parentElement.appendChild(err);
         }
 
         function validateEditForm() {
-            const name = document.getElementById('edit-name').value.trim();
-            const course = document.getElementById('edit-course').value.trim();
-            let nameMsg = '';
-            let courseMsg = '';
-            if (!name) nameMsg = 'Full name is required.';
-            else if (name.length < 2) nameMsg = 'Full name must be at least 2 characters.';
-            if (!course) courseMsg = 'Course, department, or address is required.';
-            setFieldError('edit-name', 'edit-name-error', nameMsg);
-            setFieldError('edit-course', 'edit-course-error', courseMsg);
-            return !nameMsg && !courseMsg;
+            const type = editVal('edit-user-type');
+            const rules = [
+                ['edit-surname', 'Surname is required.'],
+                ['edit-fname', 'First name is required.']
+            ];
+            if (type === 'Student') {
+                rules.push(['edit-college', 'Select a college.'], ['edit-year', 'Select a year level.'], ['edit-course-program', 'Course / Program is required.']);
+            } else if (type === 'Parent') {
+                rules.push(['edit-mname', 'Middle name is required for parents.'], ['edit-parent-address', 'Home / residential address is required.']);
+            } else if (type === 'Faculty') {
+                rules.push(['edit-faculty-college', 'Select a college.'], ['edit-department', 'Department is required.']);
+            } else {
+                rules.push(['edit-other-address', 'Address or purpose of visit is required.']);
+            }
+            clearEditErrors();
+            let ok = true;
+            rules.forEach(([id, msg]) => {
+                if (!editVal(id).trim()) { setEditError(id, msg); ok = false; }
+            });
+            return ok;
         }
 
-        function onEditInput() {
-            const name = document.getElementById('edit-name').value;
-            const course = document.getElementById('edit-course').value;
-            document.getElementById('edit-name-count').innerText = `${name.length}/${EDIT_MAX}`;
-            document.getElementById('edit-course-count').innerText = `${course.length}/${EDIT_MAX}`;
-
-            if (editTouched) validateEditForm();
-
-            const dirty = name.trim() !== editOriginal.name || course.trim() !== editOriginal.course;
+        function refreshEditState() {
+            const dirty = JSON.stringify(collectEditForm()) !== editSnapshot;
             const btn = document.getElementById('save-edit-btn');
             const state = document.getElementById('edit-state');
             btn.disabled = !dirty;
@@ -340,14 +451,17 @@ HTML_GUARD_STATION = """
             state.className = 'mr-auto text-[11px] font-medium ' + (dirty ? 'text-amber-600' : 'text-slate-400');
         }
 
+        function onEditInput() {
+            if (editTouched) validateEditForm();
+            refreshEditState();
+        }
+
         function saveStudentEdit(event) {
             event.preventDefault();
             editTouched = true;
             if (!validateEditForm()) return;
 
-            const id = document.getElementById('edit-id').value;
-            const newName = document.getElementById('edit-name').value.trim();
-            const newCourse = document.getElementById('edit-course').value.trim();
+            const payload = Object.assign({ student_id: editVal('edit-id') }, collectEditForm());
             const btn = document.getElementById('save-edit-btn');
             btn.disabled = true;
             btn.innerText = 'Saving...';
@@ -355,20 +469,21 @@ HTML_GUARD_STATION = """
             fetch('/api/students/edit', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ student_id: id, normalized_name: newName, course_year: newCourse })
+                body: JSON.stringify(payload)
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(r => r.json().catch(() => ({})).then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok) throw new Error(data.message || 'Failed to update. Please try again.');
                 showToast(data.message || 'Updated successfully!', 'success');
                 closeEditModal();
                 fetchStudents();
-                btn.innerText = 'Save Changes';
+                fetchLogs();
             })
-            .catch(() => {
-                showToast('Failed to update. Please try again.', 'error');
-                btn.innerText = 'Save Changes';
+            .catch(err => {
+                showToast(err.message || 'Failed to update. Please try again.', 'error');
                 btn.disabled = false;
-            });
+            })
+            .finally(() => { btn.innerText = 'Save Changes'; });
         }
 
         document.addEventListener('keydown', (e) => {
@@ -448,8 +563,8 @@ HTML_GUARD_STATION = """
                 });
             }
             document.getElementById('export-hint').innerText = mode === 'range'
-                ? 'One row per visitor with total entries (Time In) and exits (Time Out) for the selected months, inclusive.'
-                : 'One report for a single visitor with entries and exits counted per day. Untick "Include all dates" to limit it to a month range.';
+                ? 'One chart per day with a horizontal bar for each visitor stay, from Time In to Time Out, for the selected months (inclusive).'
+                : 'One chart for a single visitor with a row per day and a bar for each stay. Untick "Include all dates" to limit it to a month range.';
             showExportError('');
         }
 
@@ -524,7 +639,7 @@ HTML_GUARD_STATION = """
                     }
                     const disposition = res.headers.get('Content-Disposition') || '';
                     const match = /filename="?([^";]+)"?/.exec(disposition);
-                    return res.blob().then(blob => ({ blob, filename: match ? match[1] : 'guardgate_logs.pdf' }));
+                    return res.blob().then(blob => ({ blob, filename: match ? match[1] : 'guardgate_gantt.pdf' }));
                 })
                 .then(({ blob, filename }) => {
                     const url = URL.createObjectURL(blob);
@@ -535,7 +650,7 @@ HTML_GUARD_STATION = """
                     a.click();
                     a.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    showToast('PDF report downloaded.', 'success');
+                    showToast('Gantt chart PDF downloaded.', 'success');
                     closeExportModal();
                 })
                 .catch(err => showExportError(err.message || 'Failed to generate the PDF.'))
@@ -603,11 +718,11 @@ HTML_GUARD_STATION = """
                     <p class="px-4 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Reports</p>
                     <button type="button" role="menuitem" onclick="openExportModal('range')" class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">
                         <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        Export Logs by Month Range (PDF)
+                        Export by Month Range (PDF)
                     </button>
                     <button type="button" role="menuitem" onclick="openExportModal('student')" class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">
                         <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        Export Logs per Student (PDF)
+                        Export per visitor (PDF)
                     </button>
                     <div class="my-1.5 border-t border-slate-100"></div>
                     <p class="px-4 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Navigate</p>
@@ -641,7 +756,7 @@ HTML_GUARD_STATION = """
                                 <th class="p-2 w-8"><input type="checkbox" id="logs-select-all" onchange="toggleSelectAll(this.checked)" disabled aria-label="Select all log entries" class="w-3.5 h-3.5 rounded cursor-pointer accent-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"></th>
                                 <th class="p-2">Time</th>
                                 <th class="p-2">Name</th>
-                                <th class="p-2">Role/Col</th>
+                                <th class="p-2">College</th>
                                 <th class="p-2">Action</th>
                                 <th class="p-2 w-8"><span class="sr-only">Delete</span></th>
                             </tr>
@@ -708,7 +823,7 @@ HTML_GUARD_STATION = """
         </div>
     </div>
 
-    <!-- EDIT VISITOR MODAL -->
+    <!-- EDIT VISITOR MODAL (mirrors the registration form: category first, then fields for that category) -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" onmousedown="if (event.target === this) closeEditModal()">
         <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-lg max-h-[94vh] flex flex-col overflow-hidden border border-slate-200">
 
@@ -718,8 +833,8 @@ HTML_GUARD_STATION = """
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     </div>
                     <div>
-                        <h3 id="edit-modal-title" class="text-sm font-bold text-slate-900">Edit Visitor Information</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Update the details below, then save your changes.</p>
+                        <h3 id="edit-modal-title" class="text-sm font-bold text-slate-900">Edit Visitor</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">ID Number: <span id="edit-display-id" class="font-semibold text-slate-700">-</span></p>
                     </div>
                 </div>
                 <button type="button" onclick="closeEditModal()" aria-label="Close" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg p-1.5 transition-colors">
@@ -730,50 +845,124 @@ HTML_GUARD_STATION = """
             <form id="edit-form" onsubmit="saveStudentEdit(event)" novalidate class="flex flex-col min-h-0">
                 <input type="hidden" id="edit-id">
 
-                <!-- MODIFIED GRID LAYOUT STARTS HERE -->
-                <div class="px-6 py-5 space-y-5 overflow-y-auto min-h-0">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Display fields -->
-                        <div class="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5">
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ID Number</p>
-                            <p id="edit-display-id" class="text-sm font-semibold text-slate-900 mt-0.5 break-all"></p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5">
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Category</p>
-                            <p id="edit-display-category" class="text-sm font-semibold text-slate-900 mt-0.5"></p>
-                        </div>
+                <div class="px-6 py-5 space-y-4 overflow-y-auto min-h-0">
+                    <!-- USER TYPE SELECTOR -->
+                    <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+                        <label for="edit-user-type" class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-1.5">User Type <span class="text-rose-600">*</span></label>
+                    <select id="edit-user-type" disabled tabindex="-1" class="w-full border border-slate-200 bg-slate-50 text-slate-500 rounded-lg px-3.5 py-2 text-sm font-semibold outline-none cursor-not-allowed">
+                        <option value="Student">Student</option>
+                        <option value="Parent">Parent</option>
+                        <option value="Faculty">Faculty</option>
+                        <option value="Others">Others</option>
+                    </select>
+                        <p id="edit-type-hint" class="text-[11px] text-emerald-800/80 mt-1.5 font-medium"></p>
+                    </div>
 
-                        <!-- Aligned Inputs matching app.py styling -->
-                        <div class="space-y-1.5 md:col-span-2 mt-2">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label for="edit-name" class="text-xs font-semibold text-slate-700">Full Name <span class="text-rose-600">*</span></label>
-                                <span id="edit-name-count" class="text-[11px] text-slate-400">0/120</span>
-                            </div>
-                            <input type="text" id="edit-name" maxlength="120" autocomplete="off" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
-                            <p class="text-[11px] text-slate-500 mt-1.5">Format: Surname, First Name, Middle Name, Suffix</p>
-                            <p id="edit-name-error" role="alert" class="hidden text-[11px] font-medium text-rose-600"></p>
+                    <!-- NAME FIELDS (COMMON TO ALL) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label for="edit-surname" class="block text-[11px] font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
+                            <input type="text" id="edit-surname" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
                         </div>
-
-                        <div class="space-y-1.5 md:col-span-2">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label for="edit-course" class="text-xs font-semibold text-slate-700">Course &amp; Year / Department / Address <span class="text-rose-600">*</span></label>
-                                <span id="edit-course-count" class="text-[11px] text-slate-400">0/120</span>
-                            </div>
-                            <input type="text" id="edit-course" maxlength="120" autocomplete="off" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
-                            <p id="edit-course-error" role="alert" class="hidden text-[11px] font-medium text-rose-600"></p>
+                        <div class="space-y-1">
+                            <label for="edit-fname" class="block text-[11px] font-semibold text-slate-700">First Name <span class="text-rose-600">*</span></label>
+                            <input type="text" id="edit-fname" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                        </div>
+                        <div class="space-y-1">
+                            <label id="edit-mname-label" for="edit-mname" class="block text-[11px] font-semibold text-slate-700">Middle Name <span class="text-slate-400 font-normal">(Optional)</span></label>
+                            <input type="text" id="edit-mname" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                        </div>
+                        <div class="space-y-1">
+                            <label for="edit-suffix" class="block text-[11px] font-semibold text-slate-700">Suffix</label>
+                            <select id="edit-suffix" onchange="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 cursor-pointer">
+                                <option value="N/A">N/A</option>
+                                <option value="Jr.">Jr.</option>
+                                <option value="Sr.">Sr.</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                            </select>
                         </div>
                     </div>
-                </div>
-                <!-- MODIFIED GRID LAYOUT ENDS HERE -->
 
-                <div class="shrink-0 px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center gap-3">
-                    <p id="edit-state" class="mr-auto text-[11px] font-medium text-slate-400">No changes yet</p>
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">
-                        Cancel
-                    </button>
-                    <button type="submit" id="save-edit-btn" disabled class="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
-                        Save Changes
-                    </button>
+                    <!-- STUDENT FIELDS -->
+                    <div id="edit-group-student" class="pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-1 md:col-span-2">
+                            <label for="edit-college" class="block text-[11px] font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
+                            <select id="edit-college" onchange="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 cursor-pointer">
+                                <option value="">Select College...</option>
+                                <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
+                                <option value="CAS">CAS : College of Arts and Sciences</option>
+                                <option value="COE">COE : College of Engineering</option>
+                                <option value="CBEA">CBEA : College of Business, Economics and Accountancy</option>
+                                <option value="CAFSD">CAFSD : College of Agriculture, Forestry and Sustainable Development</option>
+                                <option value="CHS">CHS : College of Health Sciences</option>
+                                <option value="COL">COL : College of Law</option>
+                                <option value="CASAT">CASAT : College of Aquatic Sciences and Applied Technology</option>
+                                <option value="CIT">CIT : College of Industrial Technology</option>
+                                <option value="CTE">CTE : College of Teacher Education</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label for="edit-student-id" class="block text-[11px] font-semibold text-slate-700">Student ID</label>
+                            <input type="text" id="edit-student-id" readonly tabindex="-1" title="The ID number links this visitor to their face data and logs, so it cannot be changed here." class="w-full border border-slate-200 bg-slate-50 text-slate-500 rounded-lg px-3 py-2 text-sm outline-none cursor-not-allowed">
+                        </div>
+                        <div class="space-y-1">
+                            <label for="edit-year" class="block text-[11px] font-semibold text-slate-700">Year Level <span class="text-rose-600">*</span></label>
+                            <select id="edit-year" onchange="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 cursor-pointer">
+                                <option value="">Select Year...</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1 md:col-span-2">
+                            <label for="edit-course-program" class="block text-[11px] font-semibold text-slate-700">Course / Program <span class="text-rose-600">*</span></label>
+                            <input type="text" id="edit-course-program" maxlength="40" placeholder="e.g. BSCS" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm uppercase placeholder:normal-case outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                        </div>
+                    </div>
+
+                    <!-- PARENT FIELDS -->
+                    <div id="edit-group-parent" class="hidden pt-3 border-t border-slate-100 space-y-1">
+                        <label for="edit-parent-address" class="block text-[11px] font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
+                        <input type="text" id="edit-parent-address" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                    </div>
+
+                    <!-- FACULTY FIELDS -->
+                    <div id="edit-group-faculty" class="hidden pt-3 border-t border-slate-100 grid grid-cols-1 gap-3">
+                        <div class="space-y-1">
+                            <label for="edit-faculty-college" class="block text-[11px] font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
+                            <select id="edit-faculty-college" onchange="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 cursor-pointer">
+                                <option value="">Select College...</option>
+                                <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
+                                <option value="CAS">CAS : College of Arts and Sciences</option>
+                                <option value="COE">COE : College of Engineering</option>
+                                <option value="CBEA">CBEA : College of Business, Economics and Accountancy</option>
+                                <option value="CAFSD">CAFSD : College of Agriculture, Forestry and Sustainable Development</option>
+                                <option value="CHS">CHS : College of Health Sciences</option>
+                                <option value="COL">COL : College of Law</option>
+                                <option value="CASAT">CASAT : College of Aquatic Sciences and Applied Technology</option>
+                                <option value="CIT">CIT : College of Industrial Technology</option>
+                                <option value="CTE">CTE : College of Teacher Education</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label for="edit-department" class="block text-[11px] font-semibold text-slate-700">Department <span class="text-rose-600">*</span></label>
+                            <input type="text" id="edit-department" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                        </div>
+                    </div>
+
+                    <!-- OTHERS FIELDS -->
+                    <div id="edit-group-others" class="hidden pt-3 border-t border-slate-100 space-y-1">
+                        <label for="edit-other-address" class="block text-[11px] font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
+                        <input type="text" id="edit-other-address" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                    </div>
+                </div>
+
+                <div class="shrink-0 px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center gap-3 justify-end">
+                    <span id="edit-state" class="mr-auto text-[11px] font-medium text-slate-400">No changes yet</span>
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">Cancel</button>
+                    <button type="submit" id="save-edit-btn" disabled class="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -789,8 +978,7 @@ HTML_GUARD_STATION = """
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
                     <div>
-                        <h3 id="export-modal-title" class="text-sm font-bold text-slate-900">Export Attendance Logs (PDF)</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Reports show entry and exit counts instead of every log line.</p>
+                        <h3 id="export-modal-title" class="text-sm font-bold text-slate-900">Export Visit Timeline (PDF)</h3>
                     </div>
                 </div>
                 <button type="button" onclick="closeExportModal()" aria-label="Close" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg p-1.5 transition-colors">
@@ -803,7 +991,7 @@ HTML_GUARD_STATION = """
 
                     <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100">
                         <button type="button" id="export-tab-range" onclick="setExportMode('range')" class="px-3 py-2 text-xs font-semibold rounded-lg transition">By Month Range</button>
-                        <button type="button" id="export-tab-student" onclick="setExportMode('student')" class="px-3 py-2 text-xs font-semibold rounded-lg transition">Per Student</button>
+                        <button type="button" id="export-tab-student" onclick="setExportMode('student')" class="px-3 py-2 text-xs font-semibold rounded-lg transition">Per Visitor</button>
                     </div>
 
                     <div id="export-student-group">
@@ -842,6 +1030,7 @@ HTML_GUARD_STATION = """
                     <button type="submit" id="export-submit-btn" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Download PDF</button>
                 </div>
             </form>
+            
         </div>
     </div>
 
@@ -894,27 +1083,89 @@ def get_logs():
     
     return jsonify(query.order("id", desc=True).limit(30).execute().data)
 
+EDIT_COLLEGE_CODES = ('CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE')
+EDIT_SUFFIXES = ('N/A', 'Jr.', 'Sr.', 'III', 'IV')
+
+def _compose_visitor_record(data):
+    """Rebuild normalized_name / college / course_year exactly like /register does.
+    Returns (error_message, fields). error_message is None when the input is valid."""
+    def field(key):
+        return str(data.get(key) or '').strip()
+
+    user_type = field('user_type') or 'Student'
+    surname, fname, mname = field('surname'), field('fname'), field('mname')
+    suffix = field('suffix') or 'N/A'
+    if suffix not in EDIT_SUFFIXES:
+        suffix = 'N/A'
+
+    if user_type not in ('Student', 'Parent', 'Faculty', 'Others'):
+        return "Invalid user type.", None
+    if not surname or not fname:
+        return "Surname and First Name are required!", None
+
+    if user_type == 'Parent':
+        address = field('parent_address')
+        if not mname:
+            return "Middle Name is required for Parents!", None
+        if not address:
+            return "Address is required for Parents!", None
+        college, course = "Parent", address
+
+    elif user_type == 'Faculty':
+        faculty_college = field('faculty_college')
+        department = field('department')
+        if faculty_college not in EDIT_COLLEGE_CODES:
+            return "College is required for Faculty!", None
+        if not department:
+            return "Department is required for Faculty!", None
+        # Category stays "Faculty" so Guard filters keep working; the faculty's college is stored with the department
+        college, course = "Faculty", f"{faculty_college} - {department}"
+
+    elif user_type == 'Others':
+        college, course = "Others", (field('other_address') or "Visitor")
+
+    else:  # Student
+        college = field('college')
+        program = field('course').upper()
+        year_level = field('year_level')
+        if college not in EDIT_COLLEGE_CODES or not program or not year_level:
+            return "College, Course, and Year Level are required!", None
+        if year_level not in ('1', '2', '3', '4'):
+            return "Year Level must be between 1 and 4!", None
+        course = f"{program} - Year {year_level}"
+
+    normalized_name = f"{surname}, {fname}, {mname or 'N/A'}, {suffix}"
+    return None, {"normalized_name": normalized_name, "college": college, "course_year": course}
+
 @guard_bp.route('/api/students/edit', methods=['POST'])
 def edit_student():
+    s_id = None
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
         s_id = data.get('student_id')
-        normalized_name = data.get('normalized_name', '').strip()
-        course_year = data.get('course_year', '').strip()
-
-        if not s_id or not normalized_name or not course_year:
+        if not s_id:
             return jsonify({"message": "Missing required fields."}), 400
 
-        res = supabase.table("visitors").update({
-            "normalized_name": normalized_name,
-            "course_year": course_year
-        }).eq("student_id", s_id).execute()
+        if data.get('user_type'):
+            # Category-based payload (same fields as the registration form)
+            error, fields = _compose_visitor_record(data)
+            if error:
+                return jsonify({"message": error}), 400
+        else:
+            # Older payload: name + course/department/address only
+            normalized_name = str(data.get('normalized_name') or '').strip()
+            course_year = str(data.get('course_year') or '').strip()
+            if not normalized_name or not course_year:
+                return jsonify({"message": "Missing required fields."}), 400
+            fields = {"normalized_name": normalized_name, "course_year": course_year}
+
+        res = supabase.table("visitors").update(fields).eq("student_id", s_id).execute()
 
         if not res.data:
             return jsonify({"message": "Student not found."}), 404
 
         return jsonify({"message": "Student information updated successfully!"})
-        
+
     except Exception as e:
         logging.error(f"Failed to update student {s_id}: {e}")
         return jsonify({"message": "Internal server error. Please try again."}), 500
@@ -1017,7 +1268,9 @@ def delete_all_logs():
     return jsonify({"message": message, "deleted": deleted})
 
 
-# ==================== PDF export ====================
+# ==================== PDF export (Gantt chart) ====================
+
+# ==================== PDF export (Gantt chart) ====================
 
 def _month_bounds(from_month, to_month):
     """Turn 'YYYY-MM' + 'YYYY-MM' into (start, end_exclusive) timestamp strings."""
@@ -1062,121 +1315,315 @@ def _pretty_name(raw):
         return parts[0] if parts else (raw or "-")
     return f"{parts[0]}, {' '.join(parts[1:])}"
 
-def _build_export_pdf(mode, rows, period_label, student=None):
+_TS_FORMATS = ("%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p")
+
+def _parse_ts(value):
+    text = str(value or "").strip()
+    for fmt in _TS_FORMATS:
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+def _build_stay_sessions(rows, clip=None):
+    ph_now = datetime.now(timezone(timedelta(hours=8))).replace(tzinfo=None)
+    events = OrderedDict()
+    for r in rows:
+        ts = _parse_ts(r.get("timestamp"))
+        if ts is None or r.get("action") not in ("Time In", "Time Out"):
+            continue
+        events.setdefault(r.get("student_id"), []).append((ts, r.get("action"), r))
+
+    sessions = []
+    orphans = 0
+
+    def add(row, start, end):
+        is_open = end is None
+        if is_open:
+            day_end = datetime.combine(start.date(), datetime.min.time()) + timedelta(days=1)
+            end = min(ph_now, day_end)
+            if end <= start:
+                end = start + timedelta(minutes=1)
+        if clip:
+            if end < clip[0] or start >= clip[1]:
+                return
+            start, end = max(start, clip[0]), min(end, clip[1])
+        sessions.append({
+            "sid": row.get("student_id"), "name": row.get("normalized_name"),
+            "college": row.get("college"), "start": start, "end": end, "open": is_open,
+        })
+
+    for sid, items in events.items():
+        pending = None
+        for ts, action, row in items:
+            if action == "Time In":
+                if pending:
+                    add(pending[1], pending[0], None)
+                pending = (ts, row)
+            elif pending:
+                add(pending[1], pending[0], ts)
+                pending = None
+            elif not clip or (clip[0] <= ts < clip[1]):
+                orphans += 1
+        if pending:
+            add(pending[1], pending[0], None)
+
+    sessions.sort(key=lambda s: (s["start"], s["end"]))
+    return sessions, orphans
+
+def _split_by_day(sess):
+    segments = []
+    day = datetime.combine(sess["start"].date(), datetime.min.time())
+    while True:
+        next_day = day + timedelta(days=1)
+        seg_start, seg_end = max(sess["start"], day), min(sess["end"], next_day)
+        if seg_end > seg_start or sess["start"] == sess["end"]:
+            segments.append((
+                day.date(),
+                (seg_start - day).total_seconds() / 60,
+                (seg_end - day).total_seconds() / 60,
+                sess["open"],
+            ))
+        if sess["end"] <= next_day:
+            break
+        day = next_day
+    return segments
+
+def _fmt_minutes(minutes):
+    minutes = int(round(minutes))
+    if minutes < 1:
+        return "<1m"
+    hours, mins = divmod(minutes, 60)
+    if hours and mins:
+        return f"{hours}h {mins}m"
+    return f"{hours}h" if hours else f"{mins}m"
+
+def _fmt_hour(hour):
+    hour = int(hour) % 24
+    return f"{hour % 12 or 12} {'AM' if hour < 12 else 'PM'}"
+
+def _build_export_pdf(mode, sessions, period_label, student=None, orphans=0):
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import mm
-    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    from reportlab.platypus import Flowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer
 
     green = colors.HexColor("#047857")
+    amber = colors.HexColor("#d97706")
     dark = colors.HexColor("#064e3b")
     zebra = colors.HexColor("#f1f7f3")
     grid = colors.HexColor("#d1d5db")
+    grid_minor = colors.HexColor("#e5e7eb")
+    slate = colors.HexColor("#475569")
+
+    page = landscape(A4)
+    margin = 15 * mm
+    content_w = page[0] - 2 * margin
 
     base = getSampleStyleSheet()
-    title_style = ParagraphStyle("t", parent=base["Title"], fontName="Helvetica-Bold", fontSize=17, textColor=dark, alignment=0, spaceAfter=2)
-    sub_style = ParagraphStyle("s", parent=base["Normal"], fontName="Helvetica", fontSize=9, textColor=colors.HexColor("#475569"), leading=13)
-    cell_style = ParagraphStyle("c", parent=base["Normal"], fontName="Helvetica", fontSize=8.5, leading=11)
-    head_style = ParagraphStyle("h", parent=cell_style, fontName="Helvetica-Bold", textColor=colors.white)
-    head_center = ParagraphStyle("hc", parent=head_style, alignment=1)
+    title_style = ParagraphStyle("t", parent=base["Title"], fontName="Helvetica-Bold", fontSize=16, textColor=dark, alignment=0, spaceAfter=2)
+    sub_style = ParagraphStyle("s", parent=base["Normal"], fontName="Helvetica", fontSize=8.5, textColor=slate, leading=12)
+    note_style = ParagraphStyle("n", parent=sub_style, fontSize=7.5, textColor=colors.HexColor("#64748b"), leading=10)
+    day_style = ParagraphStyle("d", parent=base["Normal"], fontName="Helvetica-Bold", fontSize=9.5, textColor=dark, spaceAfter=2)
 
-    total_in = sum(1 for r in rows if r.get("action") == "Time In")
-    total_out = sum(1 for r in rows if r.get("action") == "Time Out")
+    days = OrderedDict()
+    for s in sessions:
+        for day, a, b, is_open in _split_by_day(s):
+            bucket = days.setdefault(day, OrderedDict())
+            key = "stay" if mode == "student" else s["sid"]
+            row = bucket.get(key)
+            if row is None:
+                label = day.strftime("%Y-%m-%d (%a)") if mode == "student" else _pretty_name(s["name"])
+                row = bucket[key] = {"label": label, "sub": "" if mode == "student" else (s["college"] or ""),
+                                     "segs": [], "total": 0.0, "first": a}
+            row["segs"].append((a, b, is_open))
+            row["total"] += b - a
+            row["first"] = min(row["first"], a)
+    ordered_days = sorted(days)
+
+    all_segs = [seg for bucket in days.values() for row in bucket.values() for seg in row["segs"]]
+    lo = int(min(a for a, _, _ in all_segs) // 60)
+    hi = int(-(-max(b for _, b, _ in all_segs) // 60))
+    need = 6 - (hi - lo)
+    if need > 0:
+        lo = max(0, lo - need // 2)
+        hi = min(24, hi + need - need // 2)
+        if hi - lo < 6:
+            lo = max(0, hi - 6)
+        if hi - lo < 6:
+            hi = lo + 6
+    span_h = hi - lo
+    tick_step = 1 if span_h <= 8 else (2 if span_h <= 14 else 3)
+
+    ROW_H, HEAD_H, BAR_H = 6.5 * mm, 6.5 * mm, 3.5 * mm
+    LABEL_W, TOTAL_W = 62 * mm, 22 * mm
+    ROWS_PER_CHUNK = 16
+
+    class GanttChart(Flowable):
+        def __init__(self, rows, label_head, show_sub):
+            super().__init__()
+            self.rows, self.label_head, self.show_sub = rows, label_head, show_sub
+            self.width = content_w
+            self.height = HEAD_H + len(rows) * ROW_H
+
+        def wrap(self, avail_w, avail_h):
+            return self.width, self.height
+
+        def _x(self, minute):
+            plot_w = self.width - LABEL_W - TOTAL_W
+            return LABEL_W + (minute / 60.0 - lo) / span_h * plot_w
+
+        def _fit(self, text, font, size, max_w):
+            if stringWidth(text, font, size) <= max_w:
+                return text
+            while text and stringWidth(text + "...", font, size) > max_w:
+                text = text[:-1]
+            return text + "..."
+
+        def draw(self):
+            c = self.canv
+            w, h = self.width, self.height
+            plot_x, plot_end = LABEL_W, w - TOTAL_W
+
+            c.setFillColor(green)
+            c.rect(0, h - HEAD_H, w, HEAD_H, stroke=0, fill=1)
+            c.setFillColor(colors.white)
+            c.setFont("Helvetica-Bold", 7.5)
+            c.drawString(3 * mm, h - HEAD_H / 2 - 2.5, self.label_head)
+            c.drawCentredString(plot_end + TOTAL_W / 2, h - HEAD_H / 2 - 2.5, "Total")
+
+            for i in range(len(self.rows)):
+                if i % 2 == 1:
+                    c.setFillColor(zebra)
+                    c.rect(0, h - HEAD_H - (i + 1) * ROW_H, w, ROW_H, stroke=0, fill=1)
+
+            for hour in range(lo, hi + 1):
+                x = self._x(hour * 60)
+                major = (hour - lo) % tick_step == 0
+                c.setStrokeColor(grid if major else grid_minor)
+                c.setLineWidth(0.5 if major else 0.25)
+                c.line(x, 0, x, h - HEAD_H)
+                if major:
+                    c.setFillColor(colors.white)
+                    c.setFont("Helvetica", 6.5)
+                    c.drawCentredString(x, h - HEAD_H / 2 - 2.5, _fmt_hour(hour))
+
+            for i, row in enumerate(self.rows):
+                y_bot = h - HEAD_H - (i + 1) * ROW_H
+                y_mid = y_bot + ROW_H / 2
+                sub_w = stringWidth(row["sub"], "Helvetica", 6) + 3 * mm if (self.show_sub and row["sub"]) else 0
+                c.setFillColor(colors.HexColor("#0f172a"))
+                c.setFont("Helvetica-Bold" if not self.show_sub else "Helvetica", 7.5)
+                c.drawString(3 * mm, y_mid - 2.5, self._fit(row["label"], "Helvetica", 7.5, LABEL_W - 6 * mm - sub_w))
+                if sub_w:
+                    c.setFillColor(colors.HexColor("#64748b"))
+                    c.setFont("Helvetica", 6)
+                    c.drawRightString(LABEL_W - 2 * mm, y_mid - 2, row["sub"])
+
+                for a, b, is_open in row["segs"]:
+                    x1, x2 = self._x(a), self._x(b)
+                    bar_w = max(x2 - x1, 1.2 * mm)
+                    c.setFillColor(amber if is_open else green)
+                    c.roundRect(x1, y_mid - BAR_H / 2, bar_w, BAR_H, 1 * mm, stroke=0, fill=1)
+                    text = _fmt_minutes(b - a) + ("*" if is_open else "")
+                    if stringWidth(text, "Helvetica-Bold", 6) + 2 * mm < bar_w:
+                        c.setFillColor(colors.white)
+                        c.setFont("Helvetica-Bold", 6)
+                        c.drawCentredString(x1 + bar_w / 2, y_mid - 2, text)
+
+                c.setFillColor(dark)
+                c.setFont("Helvetica-Bold", 7.5)
+                c.drawCentredString(plot_end + TOTAL_W / 2, y_mid - 2.5, _fmt_minutes(row["total"]))
+
+            c.setStrokeColor(grid)
+            c.setLineWidth(0.6)
+            c.rect(0, 0, w, h, stroke=1, fill=0)
+            c.line(plot_x, 0, plot_x, h - HEAD_H)
+            c.line(plot_end, 0, plot_end, h - HEAD_H)
+
+    class Legend(Flowable):
+        def wrap(self, avail_w, avail_h):
+            return avail_w, 4 * mm
+
+        def draw(self):
+            c = self.canv
+            x = 0
+            for color, text in ((green, "Completed Stay"), (amber, "Open Stay*")):
+                c.setFillColor(color)
+                c.roundRect(x, 0.6 * mm, 6 * mm, 2.5 * mm, 0.6 * mm, stroke=0, fill=1)
+                c.setFillColor(slate)
+                c.setFont("Helvetica", 7.5)
+                c.drawString(x + 7.5 * mm, 0.9 * mm, text)
+                x += 7.5 * mm + stringWidth(text, "Helvetica", 7.5) + 6 * mm
+
+    durations = [(s["end"] - s["start"]).total_seconds() / 60 for s in sessions]
+    closed = [d for s, d in zip(sessions, durations) if not s["open"]]
+    open_count = sum(1 for s in sessions if s["open"])
     generated = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     story = []
     if mode == "student":
-        story.append(Paragraph("GuardGate Visitor Attendance Report", title_style))
-        story.append(Paragraph(f"Visitor: <b>{_esc(_pretty_name(student.get('normalized_name')))}</b>", sub_style))
-        story.append(Paragraph(f"ID Number: {_esc(student.get('student_id'))} &nbsp;|&nbsp; Category: {_esc(student.get('college'))} &nbsp;|&nbsp; {_esc(student.get('course_year') or '-')}", sub_style))
+        story.append(Paragraph("Visitor Activity Log", title_style))
+        story.append(Paragraph(f"<b>{_esc(_pretty_name(student.get('normalized_name')))}</b> &nbsp;|&nbsp; ID: {_esc(student.get('student_id'))} &nbsp;|&nbsp; {_esc(student.get('college'))}", sub_style))
     else:
-        story.append(Paragraph("GuardGate Attendance Summary", title_style))
+        story.append(Paragraph("GuardGate Attendance Gantt Chart", title_style))
+    
     story.append(Paragraph(f"Period: {_esc(period_label)} &nbsp;|&nbsp; Generated: {generated}", sub_style))
-    story.append(Spacer(1, 4 * mm))
+    story.append(Spacer(1, 2 * mm))
+
+    stats = []
+    if mode != "student":
+        stats.append(f"Visitors: <b>{len({s['sid'] for s in sessions})}</b>")
+    stats.append(f"Stays: <b>{len(sessions)}</b>")
+    stats.append(f"Days: <b>{len(ordered_days)}</b>")
+    stats.append(f"Total Time: <b>{_fmt_minutes(sum(durations))}</b>")
+    if closed:
+        stats.append(f"Avg Stay: <b>{_fmt_minutes(sum(closed) / len(closed))}</b>")
+    story.append(Paragraph(" &nbsp;|&nbsp; ".join(stats), sub_style))
+    story.append(Spacer(1, 1.5 * mm))
+    story.append(Legend())
+
+    notes = []
+    if open_count:
+        notes.append(f"* {open_count} open stay(s) without Time Out.")
+    if orphans:
+        notes.append(f"{orphans} unrecorded exit(s).")
+    if notes:
+        story.append(Paragraph(" ".join(notes), note_style))
+        story.append(Spacer(1, 2.5 * mm))
+
+    def add_chart(heading, rows, label_head, show_sub):
+        for i in range(0, len(rows), ROWS_PER_CHUNK):
+            text = heading if i == 0 else f"{heading} (cont.)"
+            story.append(KeepTogether([
+                Paragraph(_esc(text), day_style),
+                GanttChart(rows[i:i + ROWS_PER_CHUNK], label_head, show_sub),
+                Spacer(1, 4 * mm),
+            ]))
 
     if mode == "student":
-        by_day = OrderedDict()
-        for r in rows:
-            day = str(r.get("timestamp") or "")[:10]
-            entry = by_day.setdefault(day, [0, 0])
-            if r.get("action") == "Time In":
-                entry[0] += 1
-            elif r.get("action") == "Time Out":
-                entry[1] += 1
-        story.append(Paragraph(f"Total entries: <b>{total_in}</b> &nbsp;|&nbsp; Total exits: <b>{total_out}</b> &nbsp;|&nbsp; Days with activity: <b>{len(by_day)}</b>", sub_style))
-        story.append(Spacer(1, 4 * mm))
-
-        data = [[Paragraph("Date", head_style), Paragraph("Entries", head_center), Paragraph("Exits", head_center)]]
-        for day, (n_in, n_out) in by_day.items():
-            try:
-                label = datetime.strptime(day, "%Y-%m-%d").strftime("%Y-%m-%d (%a)")
-            except ValueError:
-                label = day or "-"
-            data.append([Paragraph(label, cell_style), str(n_in), str(n_out)])
-        data.append([Paragraph("<b>Total</b>", cell_style), str(total_in), str(total_out)])
-        col_widths = [90 * mm, 40 * mm, 40 * mm]
-        numeric_from = 1
+        rows = [row for day in ordered_days for row in days[day].values()]
+        add_chart("Daily Timeline", rows, "Date", False)
     else:
-        people = OrderedDict()
-        for r in rows:
-            key = r.get("student_id")
-            p = people.setdefault(key, {"name": r.get("normalized_name"), "college": r.get("college"), "in": 0, "out": 0})
-            if r.get("action") == "Time In":
-                p["in"] += 1
-            elif r.get("action") == "Time Out":
-                p["out"] += 1
-        ordered = sorted(people.items(), key=lambda kv: (kv[1]["name"] or "").lower())
-        story.append(Paragraph(f"Visitors: <b>{len(ordered)}</b> &nbsp;|&nbsp; Total entries: <b>{total_in}</b> &nbsp;|&nbsp; Total exits: <b>{total_out}</b>", sub_style))
-        story.append(Spacer(1, 4 * mm))
-
-        data = [[Paragraph(h, head_center if h in ("No.", "Entries", "Exits") else head_style) for h in ("No.", "ID Number", "Full Name", "Category", "Entries", "Exits")]]
-        for i, (sid, p) in enumerate(ordered, start=1):
-            data.append([
-                str(i),
-                Paragraph(_esc(sid), cell_style),
-                Paragraph(_esc(_pretty_name(p["name"])), cell_style),
-                Paragraph(_esc(p["college"]), cell_style),
-                str(p["in"]),
-                str(p["out"]),
-            ])
-        data.append(["", "", Paragraph("<b>Total</b>", cell_style), "", str(total_in), str(total_out)])
-        col_widths = [12 * mm, 30 * mm, 70 * mm, 28 * mm, 20 * mm, 20 * mm]
-        numeric_from = 4
-
-    if len(data) == 2:
-        story.append(Paragraph("No attendance records were found for the selected filters.", sub_style))
-    else:
-        table = Table(data, colWidths=col_widths, repeatRows=1)
-        style = [
-            ("BACKGROUND", (0, 0), (-1, 0), green),
-            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-            ("FONTSIZE", (0, 1), (-1, -1), 8.5),
-            ("ALIGN", (numeric_from, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("GRID", (0, 0), (-1, -1), 0.4, grid),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, zebra]),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#dcefe3")),
-            ("FONTNAME", (numeric_from, -1), (-1, -1), "Helvetica-Bold"),
-        ]
-        if mode != "student":
-            style.append(("ALIGN", (0, 0), (0, -1), "CENTER"))
-        table.setStyle(TableStyle(style))
-        story.append(table)
+        for day in ordered_days:
+            rows = sorted(days[day].values(), key=lambda r: (r["first"], r["label"].lower()))
+            count = len(rows)
+            add_chart(f"{day.strftime('%A, %d %b %Y')} ({count} visitors)", rows, "Visitor", True)
 
     def footer(canvas, doc):
         canvas.saveState()
-        canvas.setFont("Helvetica", 8)
+        canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(colors.HexColor("#64748b"))
-        canvas.drawString(doc.leftMargin, 10 * mm, "GuardGate Admin Station")
-        canvas.drawRightString(A4[0] - doc.rightMargin, 10 * mm, f"Page {doc.page}")
+        canvas.drawString(doc.leftMargin, 6 * mm, "GuardGate Admin Station")
+        canvas.drawRightString(page[0] - doc.rightMargin, 6 * mm, f"Page {doc.page}")
         canvas.restoreState()
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=18 * mm,
-                            title="GuardGate Attendance Report", author="GuardGate")
+    doc = SimpleDocTemplate(buffer, pagesize=page, leftMargin=margin, rightMargin=margin, topMargin=12 * mm, bottomMargin=12 * mm,
+                            title="GuardGate Visit Duration Gantt Chart", author="GuardGate")
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     buffer.seek(0)
     return buffer
@@ -1219,29 +1666,38 @@ def export_logs_pdf():
         student = found[0]
 
     try:
-        from reportlab.lib.pagesizes import A4  # noqa: F401  (availability check)
+        from reportlab.lib.pagesizes import A4  # noqa: F401
     except ImportError:
         return jsonify({"message": "PDF export needs the reportlab package. Run: pip install reportlab"}), 500
 
+    clip = None
+    fetch_start, fetch_end = start, end
+    if start and end:
+        fmt = "%Y-%m-%d %H:%M:%S"
+        clip = (datetime.strptime(start, fmt), datetime.strptime(end, fmt))
+        fetch_start = (clip[0] - timedelta(days=1)).strftime(fmt)
+        fetch_end = (clip[1] + timedelta(days=1)).strftime(fmt)
+
     try:
-        rows = _fetch_logs_for_export(start, end, student_id if mode == 'student' else None)
-        if not rows:
+        rows = _fetch_logs_for_export(fetch_start, fetch_end, student_id if mode == 'student' else None)
+        sessions, orphans = _build_stay_sessions(rows, clip)
+        if not sessions:
             if mode == 'student':
                 who = _pretty_name(student.get('normalized_name'))
                 where = "on record" if period_label == "All dates" else f"for {period_label}"
                 return jsonify({"message": f"No attendance logs found for {who} {where}. Nothing to export."}), 404
             return jsonify({"message": f"No attendance logs found for {period_label}. Nothing to export."}), 404
-        pdf = _build_export_pdf(mode, rows, period_label, student)
+        pdf = _build_export_pdf(mode, sessions, period_label, student, orphans)
     except Exception:
         logging.exception("Failed to build PDF export")
         return jsonify({"message": "Failed to generate the PDF report."}), 500
 
     if mode == 'student':
         safe_id = re.sub(r'[^A-Za-z0-9_-]', '_', student_id)
-        filename = f"guardgate_{safe_id}_logs.pdf"
+        filename = f"guardgate_gantt_{safe_id}.pdf"
     elif from_month == to_month:
-        filename = f"guardgate_logs_{from_month}.pdf"
+        filename = f"guardgate_gantt_{from_month}.pdf"
     else:
-        filename = f"guardgate_logs_{from_month}_to_{to_month}.pdf"
+        filename = f"guardgate_gantt_{from_month}_to_{to_month}.pdf"
 
     return send_file(pdf, mimetype='application/pdf', as_attachment=True, download_name=filename)

@@ -171,7 +171,10 @@ def process_auto_attendance(visitor, state):
             "timestamp": timestamp
         }).execute()
 
-        system_status["text"] = f"SUCCESS ({action}): {name} | ID: {s_id}"
+        # Extract only the course/program name, excluding " - Year X"
+        clean_course = course.split(" - Year")[0] if " - Year" in course else course
+
+        system_status["text"] = f"SUCCESS ({action}): {name} | ID: {s_id} | {clean_course}"
         system_status["status"] = "success"
         system_status["unknown_detected"] = False
 
@@ -251,7 +254,7 @@ def analyze_frame(frame, state):
                 system_status["unknown_detected"] = True
         else:
             reset_verification(state)
-            system_status["text"] = "Database is empty. Please register your face."
+            system_status["text"] = "Please register your face."
             system_status["status"] = "warning"
             system_status["unknown_detected"] = True
     else:
@@ -296,7 +299,7 @@ HTML_TEMPLATE = """
         }
         /* Card width is derived from available height so a 16:9 camera never overflows the screen */
         .scanner-card {
-            width: min(100%, 48rem, max(16rem, calc((100dvh - 13rem) * 16 / 9)));
+            width: min(100%, 95rem, max(16rem, calc((100dvh - 2rem) * 16 / 9)));
         }
         @media (max-height: 520px) {
             .hide-short { display: none; }
@@ -339,7 +342,7 @@ HTML_TEMPLATE = """
                 </div>
 
                 <!-- SCANNER VIEWPORT -->
-                <div id="camera-container" class="relative bg-slate-900 w-full aspect-video min-h-0 flex justify-center items-center overflow-hidden transition-all duration-500 ease-in-out max-h-[600px] opacity-100 scale-100">
+                <div id="camera-container" class="relative bg-slate-900 w-full aspect-video min-h-0 flex justify-center items-center overflow-hidden transition-all duration-500 ease-in-out max-h-[95vh] opacity-100 scale-100">
                     <video id="webcam" autoplay playsinline muted class="object-cover h-full w-full opacity-95 -scale-x-100"></video>
                     <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
 
