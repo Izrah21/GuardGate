@@ -45,6 +45,16 @@ cv_lock = threading.Lock()
 VERIFICATION_DELAY = 2.5
 COOLDOWN_SECONDS = 5
 FACE_LOST_RESET = 1.5
+
+# Recognition tuning. LBPH returns a distance: LOWER = better match.
+# The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
+MATCH_THRESHOLD = 46       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
+DEBUG_CONFIDENCE = False   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
+FACE_SIZE = 200
+MIN_FACE_RATIO = 0.08      # smallest accepted face, as a fraction of frame width
+MAX_FACES_PER_FRAME = 4    # evaluate up to this many faces per frame (largest first)
+REGISTER_COOLDOWN = 10     # seconds a newly registered visitor is protected from an instant Time Out
 CLIENT_TTL = 600
 DEFAULT_STATUS_TEXT = "System Active: Scanning for registered visitors..."
 
@@ -54,8 +64,8 @@ client_states_lock = threading.Lock()
 def new_client_state():
     return {
         "cooldown_timer": 0,
-        "detected_face_start_time": None,
-        "current_verifying_id": None,
+        "cooldowns": {},
+        "verifying": {},          # visitor_id -> time their hold-still timer started
         "last_face_seen_time": 0,
         "last_active": time.time(),
         "system_status": {
@@ -85,8 +95,81 @@ if not os.path.exists(cascade_path):
     cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_default.xml')
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
+
+def detect_faces(gray, relaxed=False):
+    """Detect faces on a grayscale frame. Returns boxes sorted largest first."""
+    frame_w = gray.shape[1]
+    min_side = max(30 if relaxed else 48, int(frame_w * (0.04 if relaxed else MIN_FACE_RATIO)))
+    equalized = cv2.equalizeHist(gray)
+    with cv_lock:
+        faces = face_cascade.detectMultiScale(
+            equalized,
+            scaleFactor=1.05 if relaxed else 1.08,
+            minNeighbors=3 if relaxed else 6,
+            minSize=(min_side, min_side),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+    boxes = [tuple(int(v) for v in f) for f in faces]
+    boxes.sort(key=lambda b: b[2] * b[3], reverse=True)
+    return boxes
+
+
+def face_from_gray(gray, box):
+    """Crop, resize and normalise a face. Aggressively trims background/hair to isolate facial features."""
+    x, y, w, h = box
+    
+    # Trim sides by 18%, top by 22% (forehead/hair), bottom by 10% (neck)
+    trim_x = int(w * 0.18)
+    trim_y_top = int(h * 0.22)
+    trim_y_bot = int(h * 0.10)
+    
+    roi = gray[max(0, y + trim_y_top):y + h - trim_y_bot, max(0, x + trim_x):x + w - trim_x]
+    if roi.size == 0:
+        roi = gray[y:y + h, x:x + w]
+        
+    roi = cv2.resize(roi, (FACE_SIZE, FACE_SIZE), interpolation=cv2.INTER_AREA)
+    # Stronger CLAHE grid to flatten harsh room lighting differences
+    return cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(roi)
+
+
+def augment_face(face):
+    """Generates robust variations (flips, shifts, lighting) to fix 1-shot learning weakness."""
+    samples = [face]
+    h, w = face.shape
+    
+    # Brightness variations
+    samples.append(cv2.convertScaleAbs(face, alpha=1.05, beta=10))
+    samples.append(cv2.convertScaleAbs(face, alpha=0.95, beta=-10))
+    
+    # Spatial Jitter (accounts for bounding box bouncing in live video)
+    for dx in (-6, 6):
+        for dy in (-6, 6):
+            m = np.float32([[1, 0, dx], [0, 1, dy]])
+            samples.append(cv2.warpAffine(face, m, (w, h), borderMode=cv2.BORDER_REPLICATE))
+    
+    # Mirror images for symmetrical posing
+    flipped = cv2.flip(face, 1)
+    samples.append(flipped)
+    for dx in (-4, 4):
+        m = np.float32([[1, 0, dx], [0, 1, 0]])
+        samples.append(cv2.warpAffine(flipped, m, (w, h), borderMode=cv2.BORDER_REPLICATE))
+        
+    return samples
+
+
+def extract_training_face(gray, label):
+    """Registration stores the whole camera frame, so find and crop the face before training."""
+    boxes = detect_faces(gray) or detect_faces(gray, relaxed=True)
+    if boxes:
+        return face_from_gray(gray, boxes[0])
+    logging.error(f"No face found in stored image for {label}; using centre crop.")
+    h, w = gray.shape[:2]
+    side = min(h, w)
+    return face_from_gray(gray, ((w - side) // 2, (h - side) // 2, side, side))
+
+
 def load_recognizer_training():
-    global visitor_map, is_trained
+    global visitor_map, is_trained, recognizer
     new_map = {}
     faces_train = []
     ids_train = []
@@ -94,13 +177,22 @@ def load_recognizer_training():
 
     try:
         response = supabase.table("visitors").select("*").execute()
-        visitors = response.data
+        raw_visitors = response.data
 
-        if not visitors:
+        if not raw_visitors:
             with cv_lock:
+                recognizer = cv2.face.LBPHFaceRecognizer_create()
                 visitor_map = {}
                 is_trained = False
             return
+
+        # DEDUPLICATE: If a user registered multiple times, only keep the newest row 
+        # to prevent old photos from ghosting the recognizer.
+        unique_visitors = {}
+        for row in raw_visitors:
+            unique_visitors[row["student_id"]] = row
+        
+        visitors = list(unique_visitors.values())
 
         for row in visitors:
             s_id = row["student_id"]
@@ -119,8 +211,9 @@ def load_recognizer_training():
             if os.path.exists(local_img_path):
                 img = cv2.imread(local_img_path, cv2.IMREAD_GRAYSCALE)
                 if img is not None:
-                    faces_train.append(cv2.resize(img, (200, 200)))
-                    ids_train.append(current_id)
+                    for sample in augment_face(extract_training_face(img, s_id)):
+                        faces_train.append(sample)
+                        ids_train.append(current_id)
                     new_map[current_id] = {
                         "Student_ID": s_id,
                         "Name": row["normalized_name"],
@@ -131,10 +224,13 @@ def load_recognizer_training():
 
         with cv_lock:
             if faces_train:
+                # Re-initialize to wipe memory leaks and set a tighter histogram grid
+                recognizer = cv2.face.LBPHFaceRecognizer_create(grid_x=8, grid_y=8)
                 recognizer.train(faces_train, np.array(ids_train))
                 visitor_map = new_map
                 is_trained = True
             else:
+                recognizer = cv2.face.LBPHFaceRecognizer_create()
                 visitor_map = {}
                 is_trained = False
     except Exception as e:
@@ -144,6 +240,23 @@ def load_recognizer_training():
 
 load_recognizer_training()
 
+
+def identify_face(face_roi):
+    """Return (visitor or None, best_distance). Call while holding cv_lock."""
+    try:
+        label, dist = recognizer.predict(face_roi)
+    except Exception:
+        return None, 999.0
+
+    if DEBUG_CONFIDENCE:
+        print(f"[recognizer] label={label} best={dist:.1f}")
+
+    if dist >= MATCH_THRESHOLD:
+        return None, dist
+    
+    return visitor_map.get(label), dist
+
+
 def process_auto_attendance(visitor, state):
     system_status = state["system_status"]
     s_id = visitor["Student_ID"]
@@ -152,12 +265,13 @@ def process_auto_attendance(visitor, state):
     course = visitor["Course"]
 
     try:
-        logs_res = supabase.table("logs").select("*").eq("student_id", s_id).execute()
-        user_logs = logs_res.data
+        # Newest log decides the next action. Without an explicit order the "last" row was arbitrary,
+        # so visitors other than the first could get the wrong action or none at all.
+        logs_res = supabase.table("logs").select("action") \
+            .eq("student_id", s_id).order("id", desc=True).limit(1).execute()
+        last_log = logs_res.data[0] if logs_res.data else None
 
-        action = "Time In"
-        if user_logs and user_logs[-1]["action"] == "Time In":
-            action = "Time Out"
+        action = "Time Out" if last_log and last_log["action"] == "Time In" else "Time In"
 
         ph_tz = timezone(timedelta(hours=8))
         timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
@@ -178,31 +292,75 @@ def process_auto_attendance(visitor, state):
         system_status["status"] = "success"
         system_status["unknown_detected"] = False
 
-        state["cooldown_timer"] = time.time() + COOLDOWN_SECONDS
+        now = time.time()
+        state["cooldown_timer"] = now + COOLDOWN_SECONDS
+        state["cooldowns"][s_id] = now + COOLDOWN_SECONDS
+        state["cooldowns"] = {k: v for k, v in state["cooldowns"].items() if v > now}
     except Exception as e:
         logging.error(f"Error processing attendance in Supabase: {e}")
+        system_status["text"] = f"Could not record attendance for {name}. Please try again."
+        system_status["status"] = "error"
+        state["cooldowns"][s_id] = time.time() + 2
 
 def reset_verification(state):
-    state["detected_face_start_time"] = None
-    state["current_verifying_id"] = None
+    state["verifying"] = {}
 
 def analyze_frame(frame, state):
     system_status = state["system_status"]
     frame_h, frame_w = frame.shape[:2]
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    with cv_lock:
-        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+    faces = detect_faces(gray)[:MAX_FACES_PER_FRAME]
 
     current_time = time.time()
     has_face = len(faces) > 0
     system_status["face_detected"] = has_face
-    box = None
 
-    if has_face:
-        state["last_face_seen_time"] = current_time
-        (x, y, w, h) = [int(v) for v in faces[0]]
-        face_roi = cv2.resize(gray[y:y+h, x:x+w], (200, 200))
+    if not has_face:
+        if current_time - state["last_face_seen_time"] > FACE_LOST_RESET:
+            reset_verification(state)
+
+        if not system_status["unknown_detected"] and current_time > state["cooldown_timer"] + 2:
+            system_status["text"] = DEFAULT_STATUS_TEXT
+            system_status["status"] = "normal"
+            system_status["unknown_detected"] = False
+
+        result = dict(system_status)
+        result["box"] = None
+        result["boxes"] = []
+        return result
+
+    state["last_face_seen_time"] = current_time
+
+    # 1) Identify every face in the frame on its own.
+    identities = [None] * len(faces)
+    if is_trained:
+        claims = []
+        with cv_lock:
+            for i, box_xywh in enumerate(faces):
+                visitor, distance = identify_face(face_from_gray(gray, box_xywh))
+                if visitor is not None:
+                    claims.append((distance, i, visitor))
+
+        # 2) One person can only be in one place: if two faces claim the same visitor,
+        #    the closer match keeps the name and the other face becomes Unknown.
+        claims.sort(key=lambda c: c[0])
+        taken = set()
+        for distance, i, visitor in claims:
+            if visitor["Student_ID"] in taken:
+                continue
+            taken.add(visitor["Student_ID"])
+            identities[i] = visitor
+
+    # 3) Per-face verification timers, boxes and attendance.
+    verifying = state["verifying"]
+    seen_ids = set()
+    boxes = []
+    unknown_count = 0
+    recorded_now = False
+    verifying_best = None   # (seconds remaining, visitor) for the face closest to being recorded
+
+    for i, (x, y, w, h) in enumerate(faces):
         box = {
             "x": x / frame_w,
             "y": y / frame_h,
@@ -212,62 +370,66 @@ def analyze_frame(frame, state):
             "label": "",
             "progress": None
         }
+        visitor = identities[i]
 
-        if is_trained:
-            with cv_lock:
-                label_id, confidence = recognizer.predict(face_roi)
-                visitor = visitor_map.get(label_id)
-
-            if confidence < 100 and visitor is not None:
-                visitor_id = visitor["Student_ID"]
-                visitor_first_name = visitor["Name"].split(",")[0]
-                box["color"] = "green"
-
-                if current_time < state["cooldown_timer"]:
-                    reset_verification(state)
-                    box["label"] = f"{visitor_first_name} (Recorded)"
-                else:
-                    if state["current_verifying_id"] != visitor_id or state["detected_face_start_time"] is None:
-                        state["current_verifying_id"] = visitor_id
-                        state["detected_face_start_time"] = current_time
-
-                    elapsed = current_time - state["detected_face_start_time"]
-                    remaining = max(0.0, VERIFICATION_DELAY - elapsed)
-
-                    if elapsed < VERIFICATION_DELAY:
-                        box["progress"] = min(1.0, elapsed / VERIFICATION_DELAY)
-                        box["label"] = f"Hold still: {remaining:.1f}s"
-
-                        system_status["text"] = f"Face Detected: {visitor['Name']} : Hold still ({remaining:.1f}s)..."
-                        system_status["status"] = "verifying"
-                        system_status["unknown_detected"] = False
-                    else:
-                        process_auto_attendance(visitor, state)
-                        reset_verification(state)
-                        box["label"] = f"{visitor_first_name} (Recorded)"
-            else:
-                reset_verification(state)
+        if visitor is None:
+            if is_trained:
                 box["color"] = "red"
-                box["label"] = "Unrecognized"
-                system_status["text"] = "Unrecognized Face Detected : Please Register"
-                system_status["status"] = "error"
-                system_status["unknown_detected"] = True
+                box["label"] = "Unknown"
+                unknown_count += 1
         else:
-            reset_verification(state)
-            system_status["text"] = "Please register your face."
-            system_status["status"] = "warning"
-            system_status["unknown_detected"] = True
-    else:
-        if current_time - state["last_face_seen_time"] > FACE_LOST_RESET:
-            reset_verification(state)
+            visitor_id = visitor["Student_ID"]
+            visitor_first_name = visitor["Name"].split(",")[0]
+            seen_ids.add(visitor_id)
+            box["color"] = "green"
 
-        if not system_status["unknown_detected"] and current_time > state["cooldown_timer"] + 2:
-            system_status["text"] = DEFAULT_STATUS_TEXT
-            system_status["status"] = "normal"
-            system_status["unknown_detected"] = False
+            # Cooldown is tracked per visitor, so the next person in line is never blocked by the previous one
+            if current_time < state["cooldowns"].get(visitor_id, 0):
+                verifying.pop(visitor_id, None)
+                box["label"] = f"{visitor_first_name} (Recorded)"
+            else:
+                start = verifying.setdefault(visitor_id, current_time)
+                elapsed = current_time - start
+                remaining = max(0.0, VERIFICATION_DELAY - elapsed)
+
+                if elapsed < VERIFICATION_DELAY:
+                    box["progress"] = min(1.0, elapsed / VERIFICATION_DELAY)
+                    box["label"] = f"{visitor_first_name}: {remaining:.1f}s"
+                    if verifying_best is None or remaining < verifying_best[0]:
+                        verifying_best = (remaining, visitor)
+                else:
+                    process_auto_attendance(visitor, state)
+                    verifying.pop(visitor_id, None)
+                    recorded_now = True
+                    if system_status["status"] == "success":
+                        box["label"] = f"{visitor_first_name} (Recorded)"
+                    else:
+                        box["label"] = f"{visitor_first_name}: retrying"
+
+        boxes.append(box)
+
+    # Anyone who left the frame (or was no longer recognised) starts their hold timer over.
+    for stale_id in [k for k in verifying if k not in seen_ids]:
+        verifying.pop(stale_id, None)
+
+    # 4) One status line for the whole frame.
+    system_status["unknown_detected"] = (unknown_count > 0) or (not is_trained)
+    if not is_trained:
+        system_status["text"] = "Please register your face."
+        system_status["status"] = "warning"
+    elif recorded_now:
+        pass   # process_auto_attendance already wrote the success/error message
+    elif verifying_best is not None:
+        remaining, visitor = verifying_best
+        system_status["text"] = f"Face Detected: {visitor['Name']} : Hold still ({remaining:.1f}s)..."
+        system_status["status"] = "verifying"
+    elif unknown_count > 0:
+        system_status["text"] = "Unknown Face Detected : Please Register"
+        system_status["status"] = "error"
 
     result = dict(system_status)
-    result["box"] = box
+    result["boxes"] = boxes
+    result["box"] = boxes[0] if boxes else None
     return result
 
 HTML_TEMPLATE = """
@@ -343,7 +505,7 @@ HTML_TEMPLATE = """
 
                 <!-- SCANNER VIEWPORT -->
                 <div id="camera-container" class="relative bg-slate-900 w-full aspect-video min-h-0 flex justify-center items-center overflow-hidden transition-all duration-500 ease-in-out max-h-[95vh] opacity-100 scale-100">
-                    <video id="webcam" autoplay playsinline muted class="object-cover h-full w-full opacity-95 -scale-x-100"></video>
+                    <video id="webcam" autoplay playsinline muted class="object-contain h-full w-full opacity-95 -scale-x-100"></video>
                     <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
 
                     <!-- REGISTER BUTTON -->
@@ -722,7 +884,7 @@ HTML_TEMPLATE = """
         const overlay = document.getElementById('overlay');
         const sampler = document.createElement('canvas');
         const ANALYZE_INTERVAL_MS = 450;
-        const SAMPLE_WIDTH = 640;
+        const SAMPLE_WIDTH = 960;
         const BOX_COLORS = { green: '#22c55e', red: '#e11d48', amber: '#f59e0b' };
         let lastFaceBlob = null;
 
@@ -738,11 +900,18 @@ HTML_TEMPLATE = """
             }
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 }, aspectRatio: { ideal: 16 / 9 } },
                     audio: false
                 });
                 video.srcObject = stream;
                 await video.play();
+
+                // Some webcams start digitally zoomed in; drop to the widest field of view they allow
+                try {
+                    const track = stream.getVideoTracks()[0];
+                    const caps = track.getCapabilities ? track.getCapabilities() : {};
+                    if (caps.zoom) await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
+                } catch (e) {}
                 analyzeLoop();
             } catch (err) {
                 if (err && err.name === 'NotAllowedError') {
@@ -771,7 +940,7 @@ HTML_TEMPLATE = """
             ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
             ctx.restore();
 
-            return new Promise(resolve => sampler.toBlob(resolve, 'image/jpeg', 0.85));
+            return new Promise(resolve => sampler.toBlob(resolve, 'image/jpeg', 0.92));
         }
 
         async function sendFrame() {
@@ -788,7 +957,7 @@ HTML_TEMPLATE = """
             const data = await res.json();
             if (data.face_detected) lastFaceBlob = blob;
             applyStatus(data);
-            drawOverlay(data.box);
+            drawOverlay(data.boxes || (data.box ? [data.box] : []));
         }
 
         async function analyzeLoop() {
@@ -800,7 +969,7 @@ HTML_TEMPLATE = """
             }
         }
 
-        function drawOverlay(box) {
+        function drawOverlay(boxes) {
             const w = overlay.clientWidth;
             const h = overlay.clientHeight;
             if (overlay.width !== w) overlay.width = w;
@@ -808,11 +977,12 @@ HTML_TEMPLATE = """
 
             const ctx = overlay.getContext('2d');
             ctx.clearRect(0, 0, w, h);
-            if (!box || !w || !h || !video.videoWidth) return;
+            if (!boxes || !boxes.length || !w || !h || !video.videoWidth) return;
 
+            boxes.forEach(function (box) {
             const vw = video.videoWidth;
             const vh = video.videoHeight;
-            const scale = Math.max(w / vw, h / vh);
+            const scale = Math.min(w / vw, h / vh);
             const offsetX = (w - vw * scale) / 2;
             const offsetY = (h - vh * scale) / 2;
             const x = offsetX + box.x * vw * scale;
@@ -837,6 +1007,7 @@ HTML_TEMPLATE = """
                 ctx.fillStyle = color;
                 ctx.fillText(box.label, x, Math.max(18, y - 8));
             }
+            });
         }
 
         startCamera();
@@ -1100,6 +1271,12 @@ def register():
         if captured_frame is None:
             return jsonify({"success": False, "message": "Failed to process image frame."}), 400
 
+        reg_boxes = detect_faces(cv2.cvtColor(captured_frame, cv2.COLOR_BGR2GRAY))
+        if not reg_boxes:
+            return jsonify({"success": False, "message": "No clear face found in the captured frame. Face the camera in good light and try again."}), 400
+        if len(reg_boxes) > 1 and reg_boxes[1][2] * reg_boxes[1][3] > 0.5 * reg_boxes[0][2] * reg_boxes[0][3]:
+            return jsonify({"success": False, "message": "More than one face is in the frame. Only the person registering should be in front of the camera."}), 400
+
         normalized_name = f"{surname}, {fname}, {mname or 'N/A'}, {suffix}"
         
         success, encoded_img = cv2.imencode('.jpg', captured_frame)
@@ -1114,6 +1291,10 @@ def register():
             file=img_bytes, 
             file_options={"content-type": "image/jpeg", "upsert": "true"}
         )
+
+        # Keep the freshly captured photo locally so training never uses a stale cached image for this ID
+        with open(os.path.join(FACE_DIR, file_path_storage), "wb") as f:
+            f.write(img_bytes)
 
         public_url = supabase.storage.from_("faces").get_public_url(file_path_storage)
 
@@ -1137,6 +1318,13 @@ def register():
         }).execute()
 
         load_recognizer_training()
+
+        # Registration already logged a Time In, so keep the scanner from logging an instant Time Out
+        with client_states_lock:
+            protect_until = time.time() + REGISTER_COOLDOWN
+            for st in client_states.values():
+                st["cooldowns"][student_id] = protect_until
+
         return jsonify({
             "success": True, 
             "message": f"Successfully registered and timed in {normalized_name} ({user_type})!"
