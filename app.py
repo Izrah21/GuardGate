@@ -9,8 +9,7 @@ from flask import Flask, render_template_string, request, jsonify, redirect, url
 from supabase import create_client, Client
 from supabase_auth import datetime
 from datetime import datetime, timezone, timedelta
-
-
+from admin import admin_bp
 from guard import guard_bp
 
 SUPABASE_URL = "https://qciehqzajzaejhsjzrdm.supabase.co"
@@ -24,6 +23,7 @@ app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 
 # I-register ang guard_bp para ma-call ang guard.py sa port 5000
 app.register_blueprint(guard_bp)
+app.register_blueprint(admin_bp)
 
 ERROR_LOG_FILE = "guardgate_errors.log"
 FACE_DIR = "captured_faces"
@@ -48,9 +48,9 @@ FACE_LOST_RESET = 1.5
 
 # Recognition tuning. LBPH returns a distance: LOWER = better match.
 # The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
-MATCH_THRESHOLD = 46       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_THRESHOLD = 50       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
 MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
-DEBUG_CONFIDENCE = False   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
+DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
 FACE_SIZE = 200
 MIN_FACE_RATIO = 0.08      # smallest accepted face, as a fraction of frame width
 MAX_FACES_PER_FRAME = 4    # evaluate up to this many faces per frame (largest first)
@@ -265,17 +265,52 @@ def process_auto_attendance(visitor, state):
     course = visitor["Course"]
 
     try:
-        # Newest log decides the next action. Without an explicit order the "last" row was arbitrary,
-        # so visitors other than the first could get the wrong action or none at all.
-        logs_res = supabase.table("logs").select("action") \
+        # Kunin ang huling log ng bisita mula sa database
+        logs_res = supabase.table("logs").select("action, timestamp") \
             .eq("student_id", s_id).order("id", desc=True).limit(1).execute()
         last_log = logs_res.data[0] if logs_res.data else None
 
-        action = "Time Out" if last_log and last_log["action"] == "Time In" else "Time In"
-
         ph_tz = timezone(timedelta(hours=8))
-        timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
+        now_ph = datetime.now(ph_tz)
+        today_date_str = now_ph.strftime("%Y-%m-%d")
 
+        action = "Time In"
+        if last_log and last_log["action"] == "Time In":
+            last_ts_str = last_log["timestamp"]
+            
+            # I-parse ang timestamp ng huling log para malaman ang petsa nito
+            last_dt = None
+            for fmt in ("%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p"):
+                try:
+                    last_dt = datetime.strptime(last_ts_str.strip(), fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            # Kung ang huling Time In ay galing pa sa nakaraang araw (lumampas ng midnight)
+            if last_dt and last_dt.strftime("%Y-%m-%d") != today_date_str:
+                prev_date_str = last_dt.strftime("%Y-%m-%d")
+                auto_timeout_ts = f"{prev_date_str} 11:59:59 PM"
+                
+                # Awtomatikong i-insert ang Time Out para sa nakaraang araw
+                supabase.table("logs").insert({
+                    "student_id": s_id,
+                    "normalized_name": name,
+                    "college": college,
+                    "course_year": course,
+                    "action": "Time Out",
+                    "timestamp": auto_timeout_ts
+                }).execute()
+                
+                # Dahil nasara na ang kahapon, ang action ngayon para sa bagong araw ay Time In na
+                action = "Time In"
+            else:
+                # Kung same day pa rin, ang sunod na action ay Time Out
+                action = "Time Out"
+
+        timestamp = now_ph.strftime("%Y-%m-%d %I:%M:%S %p")
+
+        # I-save ang kasalukuyang attendance action
         supabase.table("logs").insert({
             "student_id": s_id,
             "normalized_name": name,
@@ -285,7 +320,6 @@ def process_auto_attendance(visitor, state):
             "timestamp": timestamp
         }).execute()
 
-        # Extract only the course/program name, excluding " - Year X"
         clean_course = course.split(" - Year")[0] if " - Year" in course else course
 
         system_status["text"] = f"SUCCESS ({action}): {name} | ID: {s_id} | {clean_course}"
@@ -1240,7 +1274,6 @@ def register():
             
             student_id = f"FAC-{short_id}"
             college = "Faculty"
-            # Category stays "Faculty" so Guard filters keep working; the faculty's college is stored with the department
             course = f"{faculty_college} - {department}"
 
         elif user_type == 'Others':
@@ -1260,8 +1293,12 @@ def register():
             if year_level not in ('1', '2', '3', '4'):
                 return jsonify({"success": False, "message": "Year Level must be between 1 and 4!"}), 400
 
-            # Same course_year column as before, now built from the structured inputs (e.g. "BSCS - Year 3")
             course = f"{program} - Year {year_level}"
+
+        # 1. Manual check kung existing na ang ID
+        existing_check = supabase.table("visitors").select("student_id").eq("student_id", student_id).execute()
+        if existing_check.data:
+            return jsonify({"success": False, "message": "Already Exist"}), 400
 
         upload = request.files.get('frame')
         if upload is None:
@@ -1292,7 +1329,6 @@ def register():
             file_options={"content-type": "image/jpeg", "upsert": "true"}
         )
 
-        # Keep the freshly captured photo locally so training never uses a stale cached image for this ID
         with open(os.path.join(FACE_DIR, file_path_storage), "wb") as f:
             f.write(img_bytes)
 
@@ -1319,7 +1355,6 @@ def register():
 
         load_recognizer_training()
 
-        # Registration already logged a Time In, so keep the scanner from logging an instant Time Out
         with client_states_lock:
             protect_until = time.time() + REGISTER_COOLDOWN
             for st in client_states.values():
@@ -1330,6 +1365,11 @@ def register():
             "message": f"Successfully registered and timed in {normalized_name} ({user_type})!"
         })
     except Exception as e:
+        error_str = str(e)
+        # 2. Sisiguraduhing "Already Exist" ang lalabas kapag na-trigger ang unique key constraint
+        if "duplicate key" in error_str.lower() or "visitors_pkey" in error_str.lower() or "already exists" in error_str.lower():
+            return jsonify({"success": False, "message": "Already Exist"}), 400
+            
         logging.error(f"Registration save error: {e}")
         return jsonify({"success": False, "message": f"Failed to register visitor: {e}"}), 500
 

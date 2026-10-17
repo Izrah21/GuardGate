@@ -331,6 +331,7 @@ HTML_GUARD_STATION = """
             const d = {
                 user_type: type,
                 surname: editVal('edit-surname').trim(),
+                student_id: editVal('edit-student-id').trim(),
                 fname: editVal('edit-fname').trim(),
                 mname: editVal('edit-mname').trim(),
                 suffix: editVal('edit-suffix')
@@ -459,18 +460,21 @@ HTML_GUARD_STATION = """
         function saveStudentEdit(event) {
             event.preventDefault();
             editTouched = true;
-            if (!validateEditForm()) return;
+        if (!validateEditForm()) return;
 
-            const payload = Object.assign({ student_id: editVal('edit-id') }, collectEditForm());
-            const btn = document.getElementById('save-edit-btn');
-            btn.disabled = true;
-            btn.innerText = 'Saving...';
+    // Kunin ang original ID at ang form data
+        const originalId = editVal('edit-id');
+        const payload = Object.assign({ original_id: originalId }, collectEditForm());
+    
+        const btn = document.getElementById('save-edit-btn');
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
 
-            fetch('/api/students/edit', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            })
+    fetch('/api/students/edit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
             .then(r => r.json().catch(() => ({})).then(data => ({ ok: r.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message || 'Failed to update. Please try again.');
@@ -639,7 +643,7 @@ HTML_GUARD_STATION = """
                     }
                     const disposition = res.headers.get('Content-Disposition') || '';
                     const match = /filename="?([^";]+)"?/.exec(disposition);
-                    return res.blob().then(blob => ({ blob, filename: match ? match[1] : 'guardgate_gantt.pdf' }));
+                    return res.blob().then(blob => ({ blob, filename: match ? match[1] : 'guardgate.pdf' }));
                 })
                 .then(({ blob, filename }) => {
                     const url = URL.createObjectURL(blob);
@@ -650,7 +654,7 @@ HTML_GUARD_STATION = """
                     a.click();
                     a.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    showToast('Gantt chart PDF downloaded.', 'success');
+                    showToast('download started.', 'success');
                     closeExportModal();
                 })
                 .catch(err => showExportError(err.message || 'Failed to generate the PDF.'))
@@ -729,6 +733,10 @@ HTML_GUARD_STATION = """
                     <a href="/scanner" role="menuitem" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">
                         <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         Student View
+                    </a>
+                    <a href="/admin-login" role="menuitem" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">
+                        <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Admin Dashboard
                     </a>
                 </div>
             </div>
@@ -903,8 +911,8 @@ HTML_GUARD_STATION = """
                             </select>
                         </div>
                         <div class="space-y-1">
-                            <label for="edit-student-id" class="block text-[11px] font-semibold text-slate-700">Student ID</label>
-                            <input type="text" id="edit-student-id" readonly tabindex="-1" title="The ID number links this visitor to their face data and logs, so it cannot be changed here." class="w-full border border-slate-200 bg-slate-50 text-slate-500 rounded-lg px-3 py-2 text-sm outline-none cursor-not-allowed">
+                            <label for="edit-student-id" class="block text-[11px] font-semibold text-slate-700">Student ID <span class="text-rose-600">*</span></label>
+                            <input type="text" id="edit-student-id" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
                         </div>
                         <div class="space-y-1">
                             <label for="edit-year" class="block text-[11px] font-semibold text-slate-700">Year Level <span class="text-rose-600">*</span></label>
@@ -1139,35 +1147,42 @@ def _compose_visitor_record(data):
 
 @guard_bp.route('/api/students/edit', methods=['POST'])
 def edit_student():
-    s_id = None
+    original_id = None
     try:
         data = request.get_json(silent=True) or {}
-        s_id = data.get('student_id')
-        if not s_id:
+        original_id = data.get('original_id') or data.get('student_id')
+        new_id = data.get('student_id')
+        
+        if not original_id or not new_id:
             return jsonify({"message": "Missing required fields."}), 400
 
-        if data.get('user_type'):
-            # Category-based payload (same fields as the registration form)
-            error, fields = _compose_visitor_record(data)
-            if error:
-                return jsonify({"message": error}), 400
-        else:
-            # Older payload: name + course/department/address only
-            normalized_name = str(data.get('normalized_name') or '').strip()
-            course_year = str(data.get('course_year') or '').strip()
-            if not normalized_name or not course_year:
-                return jsonify({"message": "Missing required fields."}), 400
-            fields = {"normalized_name": normalized_name, "course_year": course_year}
+        # I-compose ang bagong details ng visitor
+        error, fields = _compose_visitor_record(data)
+        if error:
+            return jsonify({"message": error}), 400
+            
+        fields["student_id"] = new_id
 
-        res = supabase.table("visitors").update(fields).eq("student_id", s_id).execute()
+        # Kung nagbago ang ID, i-check muna kung ginagamit na ng iba ang bagong ID
+        if original_id != new_id:
+            check_existing = supabase.table("visitors").select("student_id").eq("student_id", new_id).execute()
+            if check_existing.data:
+                return jsonify({"message": "Student ID already exists!"}), 400
+
+        # I-update ang visitors table
+        res = supabase.table("visitors").update(fields).eq("student_id", original_id).execute()
 
         if not res.data:
             return jsonify({"message": "Student not found."}), 404
 
+        # Kung nagbago ang ID, i-update din sa logs table para hindi masira ang history
+        if original_id != new_id:
+            supabase.table("logs").update({"student_id": new_id}).eq("student_id", original_id).execute()
+
         return jsonify({"message": "Student information updated successfully!"})
 
     except Exception as e:
-        logging.error(f"Failed to update student {s_id}: {e}")
+        logging.error(f"Failed to update student {original_id}: {e}")
         return jsonify({"message": "Internal server error. Please try again."}), 500
 
 @guard_bp.route('/api/logs/manual', methods=['POST'])
@@ -1268,9 +1283,7 @@ def delete_all_logs():
     return jsonify({"message": message, "deleted": deleted})
 
 
-# ==================== PDF export (Gantt chart) ====================
-
-# ==================== PDF export (Gantt chart) ====================
+# ==================== PDF export (chart) ====================
 
 def _month_bounds(from_month, to_month):
     """Turn 'YYYY-MM' + 'YYYY-MM' into (start, end_exclusive) timestamp strings."""
@@ -1569,7 +1582,7 @@ def _build_export_pdf(mode, sessions, period_label, student=None, orphans=0):
         story.append(Paragraph("Visitor Activity Log", title_style))
         story.append(Paragraph(f"<b>{_esc(_pretty_name(student.get('normalized_name')))}</b> &nbsp;|&nbsp; ID: {_esc(student.get('student_id'))} &nbsp;|&nbsp; {_esc(student.get('college'))}", sub_style))
     else:
-        story.append(Paragraph("GuardGate Attendance Gantt Chart", title_style))
+        story.append(Paragraph("GuardGate Attendance", title_style))
     
     story.append(Paragraph(f"Period: {_esc(period_label)} &nbsp;|&nbsp; Generated: {generated}", sub_style))
     story.append(Spacer(1, 2 * mm))
@@ -1617,13 +1630,13 @@ def _build_export_pdf(mode, sessions, period_label, student=None, orphans=0):
         canvas.saveState()
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(colors.HexColor("#64748b"))
-        canvas.drawString(doc.leftMargin, 6 * mm, "GuardGate Admin Station")
+        canvas.drawString(doc.leftMargin, 6 * mm, "Guard Dashboard")
         canvas.drawRightString(page[0] - doc.rightMargin, 6 * mm, f"Page {doc.page}")
         canvas.restoreState()
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=page, leftMargin=margin, rightMargin=margin, topMargin=12 * mm, bottomMargin=12 * mm,
-                            title="GuardGate Visit Duration Gantt Chart", author="GuardGate")
+                            title="GuardGate Visit Duration", author="GuardGate")
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     buffer.seek(0)
     return buffer
@@ -1694,10 +1707,10 @@ def export_logs_pdf():
 
     if mode == 'student':
         safe_id = re.sub(r'[^A-Za-z0-9_-]', '_', student_id)
-        filename = f"guardgate_gantt_{safe_id}.pdf"
+        filename = f"guardgate_{safe_id}.pdf"
     elif from_month == to_month:
-        filename = f"guardgate_gantt_{from_month}.pdf"
+        filename = f"guardgate_{from_month}.pdf"
     else:
-        filename = f"guardgate_gantt_{from_month}_to_{to_month}.pdf"
+        filename = f"guardgate_{from_month}_to_{to_month}.pdf"
 
     return send_file(pdf, mimetype='application/pdf', as_attachment=True, download_name=filename)
