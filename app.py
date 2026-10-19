@@ -48,12 +48,12 @@ FACE_LOST_RESET = 1.5
 
 # Recognition tuning. LBPH returns a distance: LOWER = better match.
 # The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
-MATCH_THRESHOLD = 42       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_THRESHOLD = 55       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
 MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
 DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
 FACE_SIZE = 200
-MIN_FACE_RATIO = 0.08      # smallest accepted face, as a fraction of frame width
-MAX_FACES_PER_FRAME = 4    # evaluate up to this many faces per frame (largest first)
+MIN_FACE_RATIO = 0.15      # smallest accepted face, as a fraction of frame width
+MAX_FACES_PER_FRAME = 1    # evaluate up to this many faces per frame (largest first)
 REGISTER_COOLDOWN = 10     # seconds a newly registered visitor is protected from an instant Time Out
 CLIENT_TTL = 600
 DEFAULT_STATUS_TEXT = "System Active: Scanning for registered visitors..."
@@ -96,6 +96,8 @@ if not os.path.exists(cascade_path):
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
 
+# --- app.py (Line 104) ---
+
 def detect_faces(gray, relaxed=False):
     """Detect faces on a grayscale frame. Returns boxes sorted largest first."""
     frame_w = gray.shape[1]
@@ -105,7 +107,7 @@ def detect_faces(gray, relaxed=False):
         faces = face_cascade.detectMultiScale(
             equalized,
             scaleFactor=1.05 if relaxed else 1.08,
-            minNeighbors=3 if relaxed else 6,
+            minNeighbors=4 if relaxed else 8,  # Increased from 6 to 8 for tighter filtering
             minSize=(min_side, min_side),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
