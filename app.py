@@ -48,7 +48,7 @@ FACE_LOST_RESET = 1.5
 
 # Recognition tuning. LBPH returns a distance: LOWER = better match.
 # The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
-MATCH_THRESHOLD = 50       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_THRESHOLD = 42       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
 MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
 DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
 FACE_SIZE = 200
@@ -115,12 +115,11 @@ def detect_faces(gray, relaxed=False):
 
 
 def face_from_gray(gray, box):
-    """Crop, resize and normalise a face. Aggressively trims background/hair to isolate facial features."""
     x, y, w, h = box
-    
-    # Trim sides by 18%, top by 22% (forehead/hair), bottom by 10% (neck)
-    trim_x = int(w * 0.18)
-    trim_y_top = int(h * 0.22)
+
+    # Relaxed trimming so distinct features aren't lost
+    trim_x = int(w * 0.12)      # Was 0.18
+    trim_y_top = int(h * 0.15)  # Was 0.22
     trim_y_bot = int(h * 0.10)
     
     roi = gray[max(0, y + trim_y_top):y + h - trim_y_bot, max(0, x + trim_x):x + w - trim_x]

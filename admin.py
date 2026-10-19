@@ -278,7 +278,7 @@ def admin_stats():
 @admin_bp.route('/api/admin/delete-visitor', methods=['POST'])
 def admin_delete_visitor():
     if not session.get('is_admin'):
-        return jsonify({"message": "Unauthorized"}), 401
+        return jsonify({"message": "Unauthorized nigger"}), 401
     
     data = request.get_json() or {}
     s_id = data.get('student_id')
