@@ -1,3 +1,6 @@
+import os
+import sys
+import logging
 from flask import Blueprint, render_template_string, request, jsonify, session, redirect, url_for
 from supabase import create_client, Client
 
@@ -21,7 +24,6 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%); }
     </style>
     <script>
-        // Hamburger menu toggle logic
         function toggleNavMenu(event) {
             event.stopPropagation();
             const panel = document.getElementById('nav-menu-panel');
@@ -47,7 +49,6 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body class="text-slate-800 p-6 min-h-screen">
     <div class="max-w-6xl mx-auto">
-        <!-- HEADER NA MAY HAMBURGER BUTTON -->
         <header class="flex justify-between items-center mb-6 bg-white p-5 rounded-2xl shadow-sm border border-emerald-900/10">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md">
@@ -59,7 +60,6 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- HAMBURGER MENU SA ADMIN -->
             <div class="relative shrink-0 flex items-center gap-3">
                 <button type="button" id="nav-menu-btn" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="nav-menu-panel" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center shadow-sm border border-emerald-900/20 transition focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -83,18 +83,16 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
             </div>
         </header>
 
-        <!-- Realtime Chart Section -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-900/10 mb-6">
             <h2 class="text-sm font-bold text-emerald-950 mb-4 flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                Real-time: Sino ang nasa loob ng Dormitory (Per College)
+                Real-time: Who Is Inside the Dormitory (Per College)
             </h2>
             <div class="w-full h-64 flex justify-center">
                 <canvas id="dormChart"></canvas>
             </div>
         </div>
 
-        <!-- Visitors Management Table -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-900/10">
             <h2 class="text-sm font-bold text-emerald-950 mb-4">Manage Visitors</h2>
             <div class="overflow-x-auto">
@@ -114,6 +112,28 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
 
+    <div id="delete-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="delete-modal-title" aria-describedby="delete-modal-message" onmousedown="if (event.target === this) closeDeleteModal()">
+        <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-sm overflow-hidden border border-slate-200">
+            <div class="px-6 pt-6 pb-5 flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </div>
+                <div class="min-w-0">
+                    <h3 id="delete-modal-title" class="text-sm font-bold text-slate-900">Delete this visitor?</h3>
+                    <p id="delete-modal-message" class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                        <span id="delete-modal-name" class="font-semibold text-slate-700 break-words"></span> will be permanently removed, including their logs and stored face image. This cannot be undone.
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button type="button" id="delete-cancel-btn" onclick="closeDeleteModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">Cancel</button>
+                <button type="button" id="delete-ok-btn" onclick="confirmDeleteVisitor()" class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="hidden"></div>
+
     <script>
         let dormChart = null;
 
@@ -128,7 +148,6 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                         return;
                     }
                     data.visitors.forEach(v => {
-                        const safeId = (v.student_id || '').replace(/'/g, "\\'");
                         tbody.innerHTML += `
                             <tr class="border-b border-slate-100 hover:bg-emerald-50/30 transition-colors">
                                 <td class="p-3 font-semibold text-slate-900">${v.student_id}</td>
@@ -136,7 +155,7 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                                 <td class="p-3"><span class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">${v.college}</span></td>
                                 <td class="p-3 text-slate-600">${v.course_year || '-'}</td>
                                 <td class="p-3 flex gap-2">
-                                    <button onclick="deleteVisitor('${safeId}')" class="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-lg font-medium hover:bg-rose-100 transition">Delete</button>
+                                    <button type="button" data-id="${escapeHtml(v.student_id)}" data-name="${escapeHtml(v.normalized_name)}" onclick="requestDeleteVisitor(this)" class="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-lg font-medium hover:bg-rose-100 transition">Delete</button>
                                 </td>
                             </tr>`;
                     });
@@ -151,7 +170,7 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                 data: {
                     labels: ['CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE', 'Others'],
                     datasets: [{
-                        label: 'Aktibong nasa Loob',
+                        label: 'Currently Inside',
                         data: Array(11).fill(0),
                         backgroundColor: '#047857',
                         borderRadius: 6
@@ -171,17 +190,65 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
             dormChart.update();
         }
 
-        function deleteVisitor(id) {
-            if (!confirm('Sigurado ka bang gusto mong burahin ang visitor na ito?')) return;
+        let pendingDeleteId = null;
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function showToast(message, isError) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = 'fixed bottom-6 right-6 z-[70] px-4 py-3 rounded-xl shadow-lg text-xs font-semibold border ' +
+                (isError ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200');
+            toast.classList.remove('hidden');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        function requestDeleteVisitor(btn) {
+            pendingDeleteId = btn.dataset.id;
+            document.getElementById('delete-modal-name').innerText = btn.dataset.name || btn.dataset.id;
+            const ok = document.getElementById('delete-ok-btn');
+            ok.disabled = false;
+            ok.innerText = 'Delete';
+            document.getElementById('delete-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('delete-cancel-btn').focus(), 50);
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            pendingDeleteId = null;
+        }
+
+        function confirmDeleteVisitor() {
+            if (!pendingDeleteId) return;
+            const id = pendingDeleteId;
+            const ok = document.getElementById('delete-ok-btn');
+            ok.disabled = true;
+            ok.innerText = 'Deleting...';
             fetch('/api/admin/delete-visitor', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ student_id: id })
-            }).then(r => r.json()).then(res => {
-                alert(res.message);
+            })
+            .then(r => r.json().then(res => ({ ok: r.ok, res })))
+            .then(({ ok, res }) => {
+                showToast(res.message, !ok);
                 loadDashboardData();
-            });
+            })
+            .catch(() => showToast('Failed to delete visitor. Please try again.', true))
+            .finally(closeDeleteModal);
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDeleteModal();
+        });
 
         window.onload = () => {
             initChart();
@@ -205,6 +272,7 @@ ADMIN_LOGIN_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body class="flex items-center justify-center h-screen p-4">
     <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm border border-emerald-900/10">
+        <a href="/login" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors mb-5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
         <div class="mx-auto w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md mb-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
         </div>
@@ -229,7 +297,6 @@ ADMIN_LOGIN_TEMPLATE = """<!DOCTYPE html>
 
 @admin_bp.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
-    # Kung naka-login na (may active session), diretso agad sa dashboard!
     if session.get('is_admin'):
         return redirect(url_for('admin_bp.admin_dashboard'))
 
@@ -275,19 +342,62 @@ def admin_stats():
 
     return jsonify({"visitors": visitors, "inside_count": inside_counts})
 
+def _face_file_name(visitor, student_id):
+    candidate = ""
+    if visitor:
+        image_path = (visitor.get("image_path") or "").split("?")[0]
+        candidate = os.path.basename(image_path.rstrip("/"))
+    if not candidate or candidate in (".", ".."):
+        candidate = f"{student_id}.jpg"
+    return os.path.basename(candidate)
+
+def _local_face_dir():
+    main_module = sys.modules.get("__main__")
+    return getattr(main_module, "FACE_DIR", "captured_faces")
+
+def _refresh_recognizer():
+    for name in ("__main__", "app"):
+        module = sys.modules.get(name)
+        loader = getattr(module, "load_recognizer_training", None)
+        if callable(loader):
+            loader()
+            return
+
 @admin_bp.route('/api/admin/delete-visitor', methods=['POST'])
 def admin_delete_visitor():
     if not session.get('is_admin'):
-        return jsonify({"message": "Unauthorized nigger"}), 401
-    
+        return jsonify({"message": "Unauthorized"}), 401
+
     data = request.get_json() or {}
     s_id = data.get('student_id')
     if not s_id:
         return jsonify({"message": "Missing student ID"}), 400
-        
+
     try:
+        rows = supabase.table("visitors").select("*").eq("student_id", s_id).execute().data or []
+        file_names = {_face_file_name(row, s_id) for row in rows} or {f"{s_id}.jpg"}
+        file_names.add(f"{s_id}.jpg")
+
+        supabase.storage.from_("faces").remove(sorted(file_names))
+
         supabase.table("visitors").delete().eq("student_id", s_id).execute()
         supabase.table("logs").delete().eq("student_id", s_id).execute()
-        return jsonify({"message": "Visitor successfully deleted!"})
     except Exception as e:
+        logging.exception("Failed to delete visitor %s", s_id)
         return jsonify({"message": f"Error: {e}"}), 500
+
+    face_dir = _local_face_dir()
+    for name in file_names:
+        local_path = os.path.join(face_dir, name)
+        try:
+            if os.path.isfile(local_path):
+                os.remove(local_path)
+        except OSError:
+            logging.exception("Failed to remove local face image %s", local_path)
+
+    try:
+        _refresh_recognizer()
+    except Exception:
+        logging.exception("Failed to refresh recognizer after deleting %s", s_id)
+
+    return jsonify({"message": "Visitor and face image successfully deleted."})

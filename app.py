@@ -1182,6 +1182,7 @@ GUARD_LOGIN_TEMPLATE = """<!DOCTYPE html>
 <body class="text-slate-800 antialiased overflow-hidden">
     <div class="app-root flex items-center justify-center p-4">
         <div class="w-full max-w-sm max-h-full overflow-y-auto bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 p-6 sm:p-8">
+            <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors mb-5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
             <h2 class="text-2xl font-bold text-emerald-950 tracking-tight">Guard Login</h2>
             <p class="text-xs text-emerald-900/60 font-medium mt-1 mb-6">Sign in to open the admin station</p>
             {% if error %}<p class="mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium px-3 py-2">{{ error }}</p>{% endif %}
