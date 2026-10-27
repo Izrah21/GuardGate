@@ -3,6 +3,7 @@ import time
 import logging
 import uuid
 import threading
+import hashlib
 import cv2
 import numpy as np
 from flask import Flask, render_template_string, request, jsonify, redirect, url_for, session
@@ -40,23 +41,29 @@ recognizer = cv2.face.LBPHFaceRecognizer_create()
 visitor_map = {}
 is_trained = False
 cv_lock = threading.Lock()
+model_signature = None
+last_sync_check = 0.0
+SYNC_INTERVAL = 5
+sync_lock = threading.Lock()
 
 # Timer delay configuration (2.5 seconds hold before triggering Time In/Out)
 VERIFICATION_DELAY = 2.5
-COOLDOWN_SECONDS = 5
+COOLDOWN_SECONDS = 3
+ATTENDANCE_GRACE = 2.0
 FACE_LOST_RESET = 1.5
 
 # Recognition tuning. LBPH returns a distance: LOWER = better match.
 # The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
-MATCH_THRESHOLD = 55       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_THRESHOLD = 42       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
 MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
 DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
 FACE_SIZE = 200
 MIN_FACE_RATIO = 0.15      # smallest accepted face, as a fraction of frame width
 MAX_FACES_PER_FRAME = 1    # evaluate up to this many faces per frame (largest first)
-REGISTER_COOLDOWN = 10     # seconds a newly registered visitor is protected from an instant Time Out
 CLIENT_TTL = 600
 DEFAULT_STATUS_TEXT = "System Active: Scanning for registered visitors..."
+PRESENCE_TTL = 15
+PH_TZ = timezone(timedelta(hours=8))
 
 client_states = {}
 client_states_lock = threading.Lock()
@@ -68,6 +75,8 @@ def new_client_state():
         "verifying": {},          # visitor_id -> time their hold-still timer started
         "last_face_seen_time": 0,
         "last_active": time.time(),
+        "current": {"visitor": None, "verified": False, "seen": 0},
+        "presence": {"id": None, "data": None, "fetched": 0},
         "system_status": {
             "text": DEFAULT_STATUS_TEXT,
             "status": "normal",
@@ -169,31 +178,63 @@ def extract_training_face(gray, label):
     return face_from_gray(gray, ((w - side) // 2, (h - side) // 2, side, side))
 
 
+def signature_of(rows):
+    parts = sorted(
+        f"{r.get('student_id')}|{r.get('normalized_name')}|{r.get('college')}|{r.get('course_year')}"
+        for r in rows
+    )
+    return hashlib.md5("\n".join(parts).encode("utf-8")).hexdigest()
+
+
+def fetch_all_visitor_rows(columns="*"):
+    rows = []
+    offset = 0
+    page = 1000
+    while True:
+        batch = supabase.table("visitors").select(columns).order("student_id").range(offset, offset + page - 1).execute().data or []
+        rows.extend(batch)
+        if len(batch) < page:
+            break
+        offset += page
+    return rows
+
+
+def prune_local_faces(keep):
+    try:
+        for name in os.listdir(FACE_DIR):
+            if name.endswith(".jpg") and name not in keep:
+                os.remove(os.path.join(FACE_DIR, name))
+    except Exception as ex:
+        logging.error(f"Failed to prune local face cache: {ex}")
+
+
 def load_recognizer_training():
-    global visitor_map, is_trained, recognizer
+    global visitor_map, is_trained, recognizer, model_signature
     new_map = {}
     faces_train = []
     ids_train = []
     current_id = 0
+    complete = True
 
     try:
-        response = supabase.table("visitors").select("*").execute()
-        raw_visitors = response.data
+        raw_visitors = fetch_all_visitor_rows()
+        new_signature = signature_of(raw_visitors)
 
         if not raw_visitors:
+            prune_local_faces(set())
             with cv_lock:
                 recognizer = cv2.face.LBPHFaceRecognizer_create()
                 visitor_map = {}
                 is_trained = False
+                model_signature = new_signature
             return
 
-        # DEDUPLICATE: If a user registered multiple times, only keep the newest row 
-        # to prevent old photos from ghosting the recognizer.
         unique_visitors = {}
         for row in raw_visitors:
             unique_visitors[row["student_id"]] = row
-        
+
         visitors = list(unique_visitors.values())
+        prune_local_faces({f"{v['student_id']}.jpg" for v in visitors})
 
         for row in visitors:
             s_id = row["student_id"]
@@ -207,138 +248,251 @@ def load_recognizer_training():
                         f.write(res)
                 except Exception as ex:
                     logging.error(f"Failed to download image for {s_id}: {ex}")
+                    complete = False
                     continue
 
-            if os.path.exists(local_img_path):
-                img = cv2.imread(local_img_path, cv2.IMREAD_GRAYSCALE)
-                if img is not None:
-                    for sample in augment_face(extract_training_face(img, s_id)):
-                        faces_train.append(sample)
-                        ids_train.append(current_id)
-                    new_map[current_id] = {
-                        "Student_ID": s_id,
-                        "Name": row["normalized_name"],
-                        "College": row["college"],
-                        "Course": row["course_year"]
-                    }
-                    current_id += 1
+            img = cv2.imread(local_img_path, cv2.IMREAD_GRAYSCALE)
+            if img is None:
+                complete = False
+                continue
+
+            for sample in augment_face(extract_training_face(img, s_id)):
+                faces_train.append(sample)
+                ids_train.append(current_id)
+            new_map[current_id] = {
+                "Student_ID": s_id,
+                "Name": row["normalized_name"],
+                "College": row["college"],
+                "Course": row["course_year"]
+            }
+            current_id += 1
+
+        new_recognizer = None
+        if faces_train:
+            new_recognizer = cv2.face.LBPHFaceRecognizer_create(grid_x=8, grid_y=8)
+            new_recognizer.train(faces_train, np.array(ids_train))
 
         with cv_lock:
-            if faces_train:
-                # Re-initialize to wipe memory leaks and set a tighter histogram grid
-                recognizer = cv2.face.LBPHFaceRecognizer_create(grid_x=8, grid_y=8)
-                recognizer.train(faces_train, np.array(ids_train))
+            if new_recognizer is not None:
+                recognizer = new_recognizer
                 visitor_map = new_map
                 is_trained = True
             else:
                 recognizer = cv2.face.LBPHFaceRecognizer_create()
                 visitor_map = {}
                 is_trained = False
+            if complete:
+                model_signature = new_signature
     except Exception as e:
         logging.error(f"Error loading training data from Supabase: {e}")
-        with cv_lock:
-            is_trained = False
+
+
+def ensure_recognizer_fresh():
+    global last_sync_check
+    now = time.time()
+    if now - last_sync_check < SYNC_INTERVAL:
+        return
+    if not sync_lock.acquire(blocking=False):
+        return
+    try:
+        last_sync_check = now
+        try:
+            current = signature_of(fetch_all_visitor_rows("student_id,normalized_name,college,course_year"))
+        except Exception as ex:
+            logging.error(f"Failed to check visitor list: {ex}")
+            return
+        if current != model_signature:
+            load_recognizer_training()
+    finally:
+        sync_lock.release()
+
 
 load_recognizer_training()
 
 
 def identify_face(face_roi):
     """Return (visitor or None, best_distance). Call while holding cv_lock."""
+    ranked = None
     try:
-        label, dist = recognizer.predict(face_roi)
+        collector = cv2.face.StandardCollector_create()
+        recognizer.predict_collect(face_roi, collector)
+        best = {}
+        for label, dist in collector.getResults(True):
+            label = int(label)
+            dist = float(dist)
+            if label not in best or dist < best[label]:
+                best[label] = dist
+        ranked = sorted(best.items(), key=lambda kv: kv[1])
     except Exception:
-        return None, 999.0
+        ranked = None
+
+    if not ranked:
+        try:
+            label, dist = recognizer.predict(face_roi)
+            ranked = [(int(label), float(dist))]
+        except Exception:
+            return None, 999.0
+
+    label, dist = ranked[0]
 
     if DEBUG_CONFIDENCE:
-        print(f"[recognizer] label={label} best={dist:.1f}")
+        runner_up = f"{ranked[1][1]:.1f}" if len(ranked) > 1 else "-"
+        print(f"[recognizer] label={label} best={dist:.1f} runner_up={runner_up}")
 
     if dist >= MATCH_THRESHOLD:
         return None, dist
-    
+
+    if len(ranked) > 1 and ranked[1][1] - dist < MATCH_MARGIN:
+        return None, dist
+
     return visitor_map.get(label), dist
 
 
-def process_auto_attendance(visitor, state):
-    system_status = state["system_status"]
+def parse_log_timestamp(value):
+    text = str(value or "").strip()
+    for fmt in ("%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def get_presence(s_id):
+    presence = {"inside": False, "stale": False, "last_action": None, "last_timestamp": None}
+    res = supabase.table("logs").select("action, timestamp") \
+        .eq("student_id", s_id).order("id", desc=True).limit(1).execute()
+    if not res.data:
+        return presence
+
+    last = res.data[0]
+    presence["last_action"] = last["action"]
+    presence["last_timestamp"] = last["timestamp"]
+    if last["action"] == "Time In":
+        last_dt = parse_log_timestamp(last["timestamp"])
+        today = datetime.now(PH_TZ).strftime("%Y-%m-%d")
+        if last_dt and last_dt.strftime("%Y-%m-%d") != today:
+            presence["stale"] = True
+        else:
+            presence["inside"] = True
+    return presence
+
+
+def cached_presence(state, s_id):
+    cache = state["presence"]
+    now = time.time()
+    if cache["id"] != s_id or cache["data"] is None or now - cache["fetched"] > PRESENCE_TTL:
+        try:
+            cache["data"] = get_presence(s_id)
+        except Exception as e:
+            logging.error(f"Error reading presence for {s_id}: {e}")
+            cache["data"] = {"inside": False, "stale": False, "last_action": None, "last_timestamp": None}
+        cache["id"] = s_id
+        cache["fetched"] = now
+    return cache["data"]
+
+
+def pretty_name(raw):
+    parts = [p.strip() for p in (raw or "").split(",")]
+    parts = [p for p in parts if p and p.upper() != "N/A"]
+    if len(parts) <= 1:
+        return parts[0] if parts else (raw or "-")
+    return f"{parts[0]}, {' '.join(parts[1:])}"
+
+
+def name_initials(raw):
+    parts = [p.strip() for p in (raw or "").split(",")]
+    surname = parts[0] if parts else ""
+    first = parts[1] if len(parts) > 1 else ""
+    return ((first[:1] + surname[:1]) or "?").upper()
+
+
+def describe_visitor(visitor):
+    college = visitor["College"]
+    course = visitor["Course"] or "-"
+    if college == "Parent":
+        return "Parent", "-", "Home Address", course
+    if college == "Faculty":
+        faculty_college, _, department = course.partition(" - ")
+        if department:
+            return "Faculty", faculty_college, "Department", department
+        return "Faculty", "-", "Department", course
+    if college == "Others":
+        return "Others", "-", "Address or Purpose of Visit", course
+    return "Student", college, "Course and Year", course
+
+
+def record_attendance(visitor, action):
     s_id = visitor["Student_ID"]
     name = visitor["Name"]
     college = visitor["College"]
     course = visitor["Course"]
+    shown = pretty_name(name)
 
-    try:
-        # Kunin ang huling log ng bisita mula sa database
-        logs_res = supabase.table("logs").select("action, timestamp") \
-            .eq("student_id", s_id).order("id", desc=True).limit(1).execute()
-        last_log = logs_res.data[0] if logs_res.data else None
+    presence = get_presence(s_id)
+    if action == "Time In" and presence["inside"]:
+        return False, f"{shown} is already timed in."
+    if action == "Time Out" and not presence["inside"]:
+        return False, f"{shown} is not timed in yet."
 
-        ph_tz = timezone(timedelta(hours=8))
-        now_ph = datetime.now(ph_tz)
-        today_date_str = now_ph.strftime("%Y-%m-%d")
+    if presence["stale"]:
+        previous = parse_log_timestamp(presence["last_timestamp"])
+        if previous:
+            supabase.table("logs").insert({
+                "student_id": s_id,
+                "normalized_name": name,
+                "college": college,
+                "course_year": course,
+                "action": "Time Out",
+                "timestamp": f"{previous.strftime('%Y-%m-%d')} 11:59:59 PM"
+            }).execute()
 
-        action = "Time In"
-        if last_log and last_log["action"] == "Time In":
-            last_ts_str = last_log["timestamp"]
-            
-            # I-parse ang timestamp ng huling log para malaman ang petsa nito
-            last_dt = None
-            for fmt in ("%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p"):
-                try:
-                    last_dt = datetime.strptime(last_ts_str.strip(), fmt)
-                    break
-                except ValueError:
-                    continue
-            
-            # Kung ang huling Time In ay galing pa sa nakaraang araw (lumampas ng midnight)
-            if last_dt and last_dt.strftime("%Y-%m-%d") != today_date_str:
-                prev_date_str = last_dt.strftime("%Y-%m-%d")
-                auto_timeout_ts = f"{prev_date_str} 11:59:59 PM"
-                
-                # Awtomatikong i-insert ang Time Out para sa nakaraang araw
-                supabase.table("logs").insert({
-                    "student_id": s_id,
-                    "normalized_name": name,
-                    "college": college,
-                    "course_year": course,
-                    "action": "Time Out",
-                    "timestamp": auto_timeout_ts
-                }).execute()
-                
-                # Dahil nasara na ang kahapon, ang action ngayon para sa bagong araw ay Time In na
-                action = "Time In"
-            else:
-                # Kung same day pa rin, ang sunod na action ay Time Out
-                action = "Time Out"
+    timestamp = datetime.now(PH_TZ).strftime("%Y-%m-%d %I:%M:%S %p")
+    supabase.table("logs").insert({
+        "student_id": s_id,
+        "normalized_name": name,
+        "college": college,
+        "course_year": course,
+        "action": action,
+        "timestamp": timestamp
+    }).execute()
+    return True, f"{action} recorded for {shown}."
 
-        timestamp = now_ph.strftime("%Y-%m-%d %I:%M:%S %p")
-
-        # I-save ang kasalukuyang attendance action
-        supabase.table("logs").insert({
-            "student_id": s_id,
-            "normalized_name": name,
-            "college": college,
-            "course_year": course,
-            "action": action,
-            "timestamp": timestamp
-        }).execute()
-
-        clean_course = course.split(" - Year")[0] if " - Year" in course else course
-
-        system_status["text"] = f"SUCCESS ({action}): {name} | ID: {s_id} | {clean_course}"
-        system_status["status"] = "success"
-        system_status["unknown_detected"] = False
-
-        now = time.time()
-        state["cooldown_timer"] = now + COOLDOWN_SECONDS
-        state["cooldowns"][s_id] = now + COOLDOWN_SECONDS
-        state["cooldowns"] = {k: v for k, v in state["cooldowns"].items() if v > now}
-    except Exception as e:
-        logging.error(f"Error processing attendance in Supabase: {e}")
-        system_status["text"] = f"Could not record attendance for {name}. Please try again."
-        system_status["status"] = "error"
-        state["cooldowns"][s_id] = time.time() + 2
 
 def reset_verification(state):
     state["verifying"] = {}
+    state["current"] = {"visitor": None, "verified": False, "seen": 0}
+
+
+def current_payload(state, now):
+    current = state["current"]
+    visitor = current["visitor"]
+    if visitor is None or now - current["seen"] > FACE_LOST_RESET:
+        return None
+
+    s_id = visitor["Student_ID"]
+    presence = cached_presence(state, s_id)
+    cooling = now < state["cooldowns"].get(s_id, 0)
+    ready = current["verified"] and not cooling
+    category, college, detail_label, detail = describe_visitor(visitor)
+
+    return {
+        "id": s_id,
+        "name": pretty_name(visitor["Name"]),
+        "initials": name_initials(visitor["Name"]),
+        "category": category,
+        "college": college,
+        "detail_label": detail_label,
+        "detail": detail,
+        "inside": presence["inside"],
+        "last_action": presence["last_action"],
+        "last_timestamp": presence["last_timestamp"],
+        "verified": current["verified"],
+        "cooling": cooling,
+        "can_time_in": ready and not presence["inside"],
+        "can_time_out": ready and presence["inside"]
+    }
+
 
 def analyze_frame(frame, state):
     system_status = state["system_status"]
@@ -363,11 +517,11 @@ def analyze_frame(frame, state):
         result = dict(system_status)
         result["box"] = None
         result["boxes"] = []
+        result["visitor"] = current_payload(state, current_time)
         return result
 
     state["last_face_seen_time"] = current_time
 
-    # 1) Identify every face in the frame on its own.
     identities = [None] * len(faces)
     if is_trained:
         claims = []
@@ -377,8 +531,6 @@ def analyze_frame(frame, state):
                 if visitor is not None:
                     claims.append((distance, i, visitor))
 
-        # 2) One person can only be in one place: if two faces claim the same visitor,
-        #    the closer match keeps the name and the other face becomes Unknown.
         claims.sort(key=lambda c: c[0])
         taken = set()
         for distance, i, visitor in claims:
@@ -387,13 +539,12 @@ def analyze_frame(frame, state):
             taken.add(visitor["Student_ID"])
             identities[i] = visitor
 
-    # 3) Per-face verification timers, boxes and attendance.
     verifying = state["verifying"]
     seen_ids = set()
     boxes = []
     unknown_count = 0
-    recorded_now = False
-    verifying_best = None   # (seconds remaining, visitor) for the face closest to being recorded
+    verifying_best = None
+    focus = None
 
     for i, (x, y, w, h) in enumerate(faces):
         box = {
@@ -417,46 +568,53 @@ def analyze_frame(frame, state):
             visitor_first_name = visitor["Name"].split(",")[0]
             seen_ids.add(visitor_id)
             box["color"] = "green"
+            cooling = current_time < state["cooldowns"].get(visitor_id, 0)
+            verified = False
 
-            # Cooldown is tracked per visitor, so the next person in line is never blocked by the previous one
-            if current_time < state["cooldowns"].get(visitor_id, 0):
+            if cooling:
                 verifying.pop(visitor_id, None)
                 box["label"] = f"{visitor_first_name} (Recorded)"
             else:
                 start = verifying.setdefault(visitor_id, current_time)
                 elapsed = current_time - start
                 remaining = max(0.0, VERIFICATION_DELAY - elapsed)
+                verified = elapsed >= VERIFICATION_DELAY
 
-                if elapsed < VERIFICATION_DELAY:
+                if verified:
+                    box["label"] = f"{visitor_first_name} (Verified)"
+                else:
                     box["progress"] = min(1.0, elapsed / VERIFICATION_DELAY)
                     box["label"] = f"{visitor_first_name}: {remaining:.1f}s"
                     if verifying_best is None or remaining < verifying_best[0]:
                         verifying_best = (remaining, visitor)
-                else:
-                    process_auto_attendance(visitor, state)
-                    verifying.pop(visitor_id, None)
-                    recorded_now = True
-                    if system_status["status"] == "success":
-                        box["label"] = f"{visitor_first_name} (Recorded)"
-                    else:
-                        box["label"] = f"{visitor_first_name}: retrying"
+
+            if focus is None:
+                focus = (visitor, verified, cooling)
 
         boxes.append(box)
 
-    # Anyone who left the frame (or was no longer recognised) starts their hold timer over.
     for stale_id in [k for k in verifying if k not in seen_ids]:
         verifying.pop(stale_id, None)
 
-    # 4) One status line for the whole frame.
+    if focus is not None:
+        state["current"] = {"visitor": focus[0], "verified": focus[1], "seen": current_time}
+    else:
+        state["current"] = {"visitor": None, "verified": False, "seen": 0}
+
     system_status["unknown_detected"] = (unknown_count > 0) or (not is_trained)
     if not is_trained:
         system_status["text"] = "Please register your face."
         system_status["status"] = "warning"
-    elif recorded_now:
-        pass   # process_auto_attendance already wrote the success/error message
+    elif focus is not None and focus[1]:
+        system_status["text"] = f"Verified: {pretty_name(focus[0]['Name'])}. Choose Time In or Time Out."
+        system_status["status"] = "success"
+    elif focus is not None and focus[2]:
+        if system_status["status"] != "success":
+            system_status["text"] = f"Recorded: {pretty_name(focus[0]['Name'])}."
+            system_status["status"] = "success"
     elif verifying_best is not None:
         remaining, visitor = verifying_best
-        system_status["text"] = f"Face Detected: {visitor['Name']} : Hold still ({remaining:.1f}s)..."
+        system_status["text"] = f"Face Detected: {pretty_name(visitor['Name'])} : Hold still ({remaining:.1f}s)..."
         system_status["status"] = "verifying"
     elif unknown_count > 0:
         system_status["text"] = "Unknown Face Detected : Please Register"
@@ -465,6 +623,7 @@ def analyze_frame(frame, state):
     result = dict(system_status)
     result["boxes"] = boxes
     result["box"] = boxes[0] if boxes else None
+    result["visitor"] = current_payload(state, current_time)
     return result
 
 HTML_TEMPLATE = """
@@ -494,13 +653,6 @@ HTML_TEMPLATE = """
             width: 100vw;
             overflow: hidden;
         }
-        /* Card width is derived from available height so a 16:9 camera never overflows the screen */
-        .scanner-card {
-            width: min(100%, 95rem, max(16rem, calc((100dvh - 2rem) * 16 / 9)));
-        }
-        @media (max-height: 520px) {
-            .hide-short { display: none; }
-        }
     </style>
 </head>
 <body class="text-slate-800 antialiased overflow-hidden">
@@ -526,50 +678,108 @@ HTML_TEMPLATE = """
         </header>
 
         <!-- MAIN SCANNER CONTAINER -->
-        <main class="flex-1 min-h-0 flex items-center justify-center p-3 sm:p-5">
-            <div class="scanner-card max-h-full flex flex-col bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 overflow-hidden">
-                <div class="shrink-0 px-4 sm:px-5 py-3 border-b border-emerald-900/5 bg-emerald-50/40 flex justify-between items-center gap-2">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-900 flex items-center gap-2 min-w-0">
-                        <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        <span class="truncate">Live Face Recognition Scanner</span>
-                    </span>
-                    <span class="shrink-0 text-[11px] font-medium text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
-                        Auto Timer: 2.5s Hold
-                    </span>
-                </div>
+        <main class="flex-1 min-h-0 p-3 sm:p-5">
+            <div class="h-full w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 overflow-hidden">
 
-                <!-- SCANNER VIEWPORT -->
-                <div id="camera-container" class="relative bg-slate-900 w-full aspect-video min-h-0 flex justify-center items-center overflow-hidden transition-all duration-500 ease-in-out max-h-[95vh] opacity-100 scale-100">
-                    <video id="webcam" autoplay playsinline muted class="object-contain h-full w-full opacity-95 -scale-x-100"></video>
-                    <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
-
-                    <!-- REGISTER BUTTON -->
-                    <button id="register-btn" onclick="openModal()" class="hidden absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-md text-emerald-800 font-semibold text-xs py-2.5 sm:py-3 px-6 sm:px-8 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-emerald-200/80 hover:bg-emerald-50 hover:scale-105 transition-all duration-200 ease-out z-10 flex items-center gap-2 whitespace-nowrap">
-                        <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                        Register New Visitor
-                    </button>
-                </div>
-
-                <!-- STANDBY OVERLAY -->
-                <div id="standby-container" class="hidden w-full aspect-video min-h-0 p-6 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-3 overflow-hidden">
-                    <div class="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/60 border border-emerald-800/30 text-emerald-400">
-                        <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                <!-- LEFT: INFORMATION AND CREDENTIALS -->
+                <section class="order-2 md:order-1 flex-1 min-w-0 min-h-0 flex flex-col">
+                    <div class="shrink-0 px-4 sm:px-5 py-3 border-b border-emerald-900/5 bg-emerald-50/40 flex justify-between items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-900 flex items-center gap-2 min-w-0">
+                            <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                            <span class="truncate">Visitor Credentials</span>
+                        </span>
+                        <span class="shrink-0 text-[11px] font-medium text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                            Verify: 2.5s Hold
+                        </span>
                     </div>
-                    <p class="text-sm font-semibold text-slate-200">Scanner on Standby</p>
-                    <p class="hide-short text-xs text-slate-400 max-w-xs">Step in front of the scanner to activate the camera and verify attendance.</p>
-                </div>
 
-                <!-- STATUS PANEL -->
-                <div id="status-panel" class="shrink-0 px-4 py-3 text-center text-sm font-medium text-emerald-800 bg-emerald-50/50 border-t border-emerald-900/10 transition-colors duration-300">
-                    System Active: Scanning for registered visitors...
-                </div>
+                    <div class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+                        <div id="status-panel" class="rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-4 py-3 text-center text-sm font-medium text-emerald-800 transition-colors duration-300">
+                            System Active: Scanning for registered visitors...
+                        </div>
+
+                        <div class="rounded-xl border border-emerald-900/10 overflow-hidden">
+                            <div class="flex items-center gap-4 p-4 bg-emerald-50/50 border-b border-emerald-900/10">
+                                <div id="v-avatar" class="w-14 h-14 shrink-0 rounded-2xl bg-slate-300 text-white flex items-center justify-center text-lg font-bold">--</div>
+                                <div class="min-w-0 flex-1">
+                                    <p id="v-name" class="text-base sm:text-lg font-bold text-emerald-950 truncate">No visitor detected</p>
+                                    <p id="v-id" class="text-xs font-medium text-emerald-900/60 truncate">Step in front of the camera</p>
+                                </div>
+                                <span id="v-presence" class="hidden shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border"></span>
+                            </div>
+                            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Category</dt>
+                                    <dd id="v-category" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">College</dt>
+                                    <dd id="v-college" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <dt id="v-detail-label" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Course / Dept / Address</dt>
+                                    <dd id="v-detail" class="mt-0.5 text-sm font-semibold text-slate-800 break-words">-</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Last Action</dt>
+                                    <dd id="v-last-action" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Recorded At</dt>
+                                    <dd id="v-last-time" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="shrink-0 p-4 sm:p-5 border-t border-emerald-900/10 bg-white">
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="time-in-btn" type="button" onclick="recordAttendance('Time In')" disabled class="py-3 px-4 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
+                                Time In
+                            </button>
+                            <button id="time-out-btn" type="button" onclick="recordAttendance('Time Out')" disabled class="py-3 px-4 text-sm font-semibold text-rose-700 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
+                                Time Out
+                            </button>
+                        </div>
+                        <button id="register-btn" type="button" onclick="openModal()" class="hidden mt-3 w-full py-2.5 px-4 text-sm font-semibold text-emerald-800 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition shadow-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                            Register New Visitor
+                        </button>
+                    </div>
+                </section>
+
+                <!-- RIGHT: SMALL CAMERA FEED -->
+                <aside class="order-1 md:order-2 shrink-0 w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-l border-emerald-900/10 bg-slate-50/60 p-3 md:p-4 flex flex-col min-h-0">
+                    <div class="mb-2 md:mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                        <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Live Camera
+                    </div>
+
+                    <div id="camera-container" class="relative bg-slate-900 w-full max-w-[14rem] md:max-w-none mx-auto aspect-video rounded-xl overflow-hidden shadow-sm">
+                        <video id="webcam" autoplay playsinline muted class="object-contain h-full w-full opacity-95 -scale-x-100"></video>
+                        <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
+
+                        <div id="standby-container" class="hidden absolute inset-0 p-3 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-2">
+                            <svg class="w-6 h-6 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <p class="text-xs font-semibold text-slate-200">Scanner on Standby</p>
+                            <p class="text-[11px] text-slate-400">Step in front of the camera to wake it up.</p>
+                        </div>
+                    </div>
+
+                    <ol class="hidden md:block mt-4 space-y-2 text-xs text-slate-600 leading-relaxed overflow-y-auto min-h-0">
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">1</span>Face the camera and hold still until you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">2</span>Check your credentials on the left.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">3</span>Press Time In to enter or Time Out to leave.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] font-bold flex items-center justify-center">?</span>Not recognized? Use Register New Visitor.</li>
+                    </ol>
+                </aside>
             </div>
         </main>
     </div>
 
     <!-- REGISTRATION MODAL -->
     <div id="reg-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 transition-opacity duration-300 overflow-hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden border border-emerald-900/15 relative">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden border border-emerald-900/15 relative">
             
             <!-- MODAL HEADER -->
             <div class="shrink-0 px-6 py-4 border-b border-emerald-900/10 flex justify-between items-center bg-emerald-50/60">
@@ -589,6 +799,8 @@ HTML_TEMPLATE = """
             
             <!-- REGISTRATION FORM -->
             <form id="reg-form" onsubmit="submitRegistration(event)" class="p-4 sm:p-6 overflow-y-auto min-h-0 flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <div class="md:col-span-3 min-w-0">
                 
                 <!-- USER TYPE SELECTOR (FIRST SELECTION) -->
                 <div class="mb-6 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
@@ -709,6 +921,31 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                </div>
+
+                <!-- FACE CAPTURE -->
+                <div class="md:col-span-2 min-w-0">
+                    <div class="md:sticky md:top-0 rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-2">
+                            Face Capture <span class="text-rose-600">*</span>
+                        </label>
+                        <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900">
+                            <video id="reg-video" autoplay playsinline muted class="absolute inset-0 h-full w-full object-contain -scale-x-100"></video>
+                            <img id="reg-preview" alt="Captured face" class="hidden absolute inset-0 h-full w-full object-contain bg-slate-900">
+                        </div>
+                        <p id="capture-hint" class="mt-2 text-[11px] font-medium text-emerald-800/80">Face the camera in good light, then press Capture Photo.</p>
+                        <div class="mt-3 grid grid-cols-1 gap-2">
+                            <button type="button" id="capture-btn" onclick="captureFace()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                                Capture Photo
+                            </button>
+                            <button type="button" id="retake-btn" onclick="retakeFace()" class="hidden w-full px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">
+                                Retake
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
                 <!-- IN-MODAL CONFIRMATION DIALOG (Avoids browser confirm()) -->
                 <div id="cancel-confirm-box" class="hidden mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
                     <div class="flex items-start gap-3">
@@ -733,7 +970,7 @@ HTML_TEMPLATE = """
                     <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
    Cancel
                     </button>
-                    <button id="submit-btn" type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm flex items-center gap-2">
+                    <button id="submit-btn" type="submit" disabled class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
    Save
                     </button>
@@ -746,8 +983,10 @@ HTML_TEMPLATE = """
     <script>
         let lastFaceTime = Date.now();
         let isCameraHidden = false;
+        let actionBusy = false;
+        let capturedBlob = null;
+        let capturedUrl = null;
 
-        // Custom non-blocking toast notifications (Replaces window.alert - NO 'localhost says')
         function showToast(message, type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -772,11 +1011,12 @@ HTML_TEMPLATE = """
 
             toast.innerHTML = `
                 ${iconSvg}
-                <div class="flex-1 text-xs leading-relaxed break-words">${message}</div>
+                <div data-msg class="flex-1 text-xs leading-relaxed break-words"></div>
                 <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             `;
+            toast.querySelector('[data-msg]').textContent = message;
 
             container.appendChild(toast);
             requestAnimationFrame(() => {
@@ -849,59 +1089,110 @@ HTML_TEMPLATE = """
             }
         }
 
+        function setText(id, value) {
+            document.getElementById(id).innerText = value;
+        }
+
+        function renderVisitor(v) {
+            const avatar = document.getElementById('v-avatar');
+            const presence = document.getElementById('v-presence');
+            const inBtn = document.getElementById('time-in-btn');
+            const outBtn = document.getElementById('time-out-btn');
+            const avatarBase = 'w-14 h-14 shrink-0 rounded-2xl text-white flex items-center justify-center text-lg font-bold ';
+
+            if (!v) {
+                setText('v-avatar', '--');
+                avatar.className = avatarBase + 'bg-slate-300';
+                setText('v-name', 'No visitor detected');
+                setText('v-id', 'Step in front of the camera');
+                presence.classList.add('hidden');
+                ['v-category', 'v-college', 'v-detail', 'v-last-action', 'v-last-time'].forEach(id => setText(id, '-'));
+                setText('v-detail-label', 'Course / Dept / Address');
+                inBtn.disabled = true;
+                outBtn.disabled = true;
+                return;
+            }
+
+            setText('v-avatar', v.initials);
+            avatar.className = avatarBase + 'bg-emerald-700';
+            setText('v-name', v.name);
+            setText('v-id', 'ID Number: ' + v.id);
+            presence.classList.remove('hidden');
+            presence.innerText = v.inside ? 'Timed In' : 'Timed Out';
+            presence.className = 'shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border ' +
+                (v.inside ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200');
+            setText('v-category', v.category);
+            setText('v-college', v.college);
+            setText('v-detail-label', v.detail_label);
+            setText('v-detail', v.detail);
+            setText('v-last-action', v.last_action || 'No record yet');
+            setText('v-last-time', v.last_timestamp || '-');
+            inBtn.disabled = actionBusy || !v.can_time_in;
+            outBtn.disabled = actionBusy || !v.can_time_out;
+        }
+
         function applyStatus(data) {
             const panel = document.getElementById('status-panel');
             panel.innerText = data.text;
             
             let bgClass = 'bg-emerald-50/50', textClass = 'text-emerald-800', borderClass = 'border-emerald-900/10';
             if (data.status === 'success') {
-   bgClass = 'bg-emerald-100/90'; textClass = 'text-emerald-950 font-bold'; borderClass = 'border-emerald-300';
+                bgClass = 'bg-emerald-100/90'; textClass = 'text-emerald-950 font-bold'; borderClass = 'border-emerald-300';
             } else if (data.status === 'verifying') {
-   bgClass = 'bg-emerald-100/60 animate-pulse'; textClass = 'text-emerald-900 font-semibold'; borderClass = 'border-emerald-300';
+                bgClass = 'bg-emerald-100/60 animate-pulse'; textClass = 'text-emerald-900 font-semibold'; borderClass = 'border-emerald-300';
             } else if (data.status === 'error') {
-   bgClass = 'bg-rose-50'; textClass = 'text-rose-700 font-semibold'; borderClass = 'border-rose-200';
+                bgClass = 'bg-rose-50'; textClass = 'text-rose-700 font-semibold'; borderClass = 'border-rose-200';
             } else if (data.status === 'warning') {
-   bgClass = 'bg-amber-50'; textClass = 'text-amber-800 font-semibold'; borderClass = 'border-amber-200';
+                bgClass = 'bg-amber-50'; textClass = 'text-amber-800 font-semibold'; borderClass = 'border-amber-200';
             }
             
-            panel.className = `shrink-0 px-4 py-3 text-center text-sm font-medium transition-colors duration-300 border-t ${bgClass} ${textClass} ${borderClass}`;
+            panel.className = `rounded-xl border px-4 py-3 text-center text-sm font-medium transition-colors duration-300 ${bgClass} ${textClass} ${borderClass}`;
             
             const regBtn = document.getElementById('register-btn');
             if (data.unknown_detected) {
-   regBtn.classList.remove('hidden');
+                regBtn.classList.remove('hidden');
             } else {
-   regBtn.classList.add('hidden');
+                regBtn.classList.add('hidden');
             }
 
+            renderVisitor(data.visitor);
             handleCameraVisibility(data.face_detected);
         }
 
         function handleCameraVisibility(faceDetected) {
-            const cameraContainer = document.getElementById('camera-container');
             const standbyContainer = document.getElementById('standby-container');
 
             if (faceDetected) {
                 lastFaceTime = Date.now();
-
                 if (isCameraHidden) {
                     isCameraHidden = false;
                     standbyContainer.classList.add('hidden');
-                    cameraContainer.classList.remove('max-h-0', 'opacity-0', 'scale-95', 'pointer-events-none');
-                    cameraContainer.classList.add('max-h-[600px]', 'opacity-100', 'scale-100');
                 }
-            } else {
-                if (!isCameraHidden) {
-                    if (Date.now() - lastFaceTime >= 5000) {
-   isCameraHidden = true;
-   cameraContainer.classList.remove('max-h-[600px]', 'opacity-100', 'scale-100');
-   cameraContainer.classList.add('max-h-0', 'opacity-0', 'scale-95', 'pointer-events-none');
-   setTimeout(() => {
-       if (isCameraHidden) {
-           standbyContainer.classList.remove('hidden');
-       }
-   }, 500);
-                    }
-                }
+            } else if (!isCameraHidden && Date.now() - lastFaceTime >= 5000) {
+                isCameraHidden = true;
+                standbyContainer.classList.remove('hidden');
+            }
+        }
+
+        async function recordAttendance(action) {
+            if (actionBusy) return;
+            actionBusy = true;
+            document.getElementById('time-in-btn').disabled = true;
+            document.getElementById('time-out-btn').disabled = true;
+
+            const body = new FormData();
+            body.append('client_id', clientId);
+            body.append('action', action);
+
+            try {
+                const res = await fetch('/attendance', { method: 'POST', body: body });
+                const data = await res.json().catch(() => ({}));
+                const ok = res.ok && data.success !== false;
+                showToast(data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.'), ok ? 'success' : 'error');
+            } catch (e) {
+                showToast('An unexpected network error occurred. Please try again.', 'error');
+            } finally {
+                actionBusy = false;
             }
         }
 
@@ -921,7 +1212,6 @@ HTML_TEMPLATE = """
         const ANALYZE_INTERVAL_MS = 450;
         const SAMPLE_WIDTH = 960;
         const BOX_COLORS = { green: '#22c55e', red: '#e11d48', amber: '#f59e0b' };
-        let lastFaceBlob = null;
 
         function showCameraError(message) {
             document.getElementById('status-panel').innerText = message;
@@ -990,7 +1280,6 @@ HTML_TEMPLATE = """
             if (!res.ok) return;
 
             const data = await res.json();
-            if (data.face_detected) lastFaceBlob = blob;
             applyStatus(data);
             drawOverlay(data.boxes || (data.box ? [data.box] : []));
         }
@@ -1047,41 +1336,126 @@ HTML_TEMPLATE = """
 
         startCamera();
 
+        const regVideo = document.getElementById('reg-video');
+        const regPreview = document.getElementById('reg-preview');
+
+        function setSubmitEnabled() {
+            document.getElementById('submit-btn').disabled = !capturedBlob;
+        }
+
+        function resetCapture() {
+            if (capturedUrl) {
+                URL.revokeObjectURL(capturedUrl);
+                capturedUrl = null;
+            }
+            capturedBlob = null;
+            regPreview.removeAttribute('src');
+            regPreview.classList.add('hidden');
+            regVideo.classList.remove('hidden');
+
+            const captureBtn = document.getElementById('capture-btn');
+            captureBtn.classList.remove('hidden');
+            captureBtn.disabled = false;
+            captureBtn.innerText = 'Capture Photo';
+            document.getElementById('retake-btn').classList.add('hidden');
+
+            const hint = document.getElementById('capture-hint');
+            hint.innerText = 'Face the camera in good light, then press Capture Photo.';
+            hint.className = 'mt-2 text-[11px] font-medium text-emerald-800/80';
+            setSubmitEnabled();
+        }
+
+        async function captureFace() {
+            const btn = document.getElementById('capture-btn');
+            btn.disabled = true;
+            btn.innerText = 'Checking photo...';
+
+            try {
+                const blob = await captureFrame();
+                if (!blob) {
+                    showToast('The camera is not ready yet. Please try again.', 'warning');
+                    return;
+                }
+
+                const body = new FormData();
+                body.append('frame', blob, 'face.jpg');
+                const res = await fetch('/check-face', { method: 'POST', body: body });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    showToast(data.message || 'Could not use that photo. Please try again.', 'warning');
+                    return;
+                }
+
+                capturedBlob = blob;
+                capturedUrl = URL.createObjectURL(blob);
+                regPreview.src = capturedUrl;
+                regPreview.classList.remove('hidden');
+                regVideo.classList.add('hidden');
+                btn.classList.add('hidden');
+                document.getElementById('retake-btn').classList.remove('hidden');
+
+                const hint = document.getElementById('capture-hint');
+                hint.innerText = 'Photo captured. If your face is not clear, press Retake.';
+                hint.className = 'mt-2 text-[11px] font-semibold text-emerald-800';
+                setSubmitEnabled();
+            } catch (e) {
+                showToast('A network error occurred while checking the photo. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Capture Photo';
+            }
+        }
+
+        function retakeFace() {
+            resetCapture();
+        }
+
         function openModal() {
             document.getElementById('cancel-confirm-box').classList.add('hidden');
+            regVideo.srcObject = video.srcObject;
+            regVideo.play().catch(() => {});
+            resetCapture();
             document.getElementById('reg-modal').classList.remove('hidden');
+        }
+
+        function hideModal() {
+            document.getElementById('reg-modal').classList.add('hidden');
+            document.getElementById('reg-form').reset();
+            handleUserTypeChange('Student');
+            regVideo.srcObject = null;
+            resetCapture();
         }
         
         function closeModal() { 
             const form = document.getElementById('reg-form');
-            const hasData = Array.from(form.elements).some(input => 
+            const hasData = capturedBlob !== null || Array.from(form.elements).some(input => 
                 (input.type === 'text' || input.type === 'number') && input.value.trim() !== ''
             );
             
             if (hasData) {
                 document.getElementById('cancel-confirm-box').classList.remove('hidden');
             } else {
-                document.getElementById('reg-modal').classList.add('hidden');
-                form.reset();
-                handleUserTypeChange('Student');
+                hideModal();
             }
         }
 
         function dismissConfirmClose(confirmCancel) {
             document.getElementById('cancel-confirm-box').classList.add('hidden');
             if (confirmCancel) {
-                document.getElementById('reg-modal').classList.add('hidden');
-                document.getElementById('reg-form').reset();
-                handleUserTypeChange('Student');
+                hideModal();
             }
         }
 
-        // AJAX Form Submission (No page reload, no browser alerts)
         function submitRegistration(event) {
             event.preventDefault();
+            if (!capturedBlob) {
+                showToast('Capture your face photo before submitting.', 'warning');
+                return;
+            }
+
             const form = document.getElementById('reg-form');
             const formData = new FormData(form);
-            if (lastFaceBlob) formData.append('frame', lastFaceBlob, 'face.jpg');
+            formData.append('frame', capturedBlob, 'face.jpg');
             const btn = document.getElementById('submit-btn');
             const originalBtnHtml = btn.innerHTML;
             
@@ -1096,19 +1470,17 @@ HTML_TEMPLATE = """
             .then(({ status, data }) => {
                 if (status >= 200 && status < 300 && data.success !== false) {
                     showToast(data.message || 'Registration successful! Face trained.', 'success');
-                    document.getElementById('reg-modal').classList.add('hidden');
-                    form.reset();
-                    handleUserTypeChange('Student');
+                    hideModal();
                 } else {
                     showToast(data.message || 'Registration failed. Please check the required fields.', 'error');
                 }
                 btn.innerHTML = originalBtnHtml;
-                btn.disabled = false;
+                setSubmitEnabled();
             })
             .catch(() => {
                 showToast('An unexpected network error occurred. Please try again.', 'error');
                 btn.innerHTML = originalBtnHtml;
-                btn.disabled = false;
+                setSubmitEnabled();
             });
         }
     </script>
@@ -1223,6 +1595,77 @@ def logout():
 
 # ==================== End New Routes ====================
 
+def face_problem(frame):
+    boxes = detect_faces(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+    if not boxes:
+        return "No clear face found in the captured frame. Face the camera in good light and try again."
+    if len(boxes) > 1 and boxes[1][2] * boxes[1][3] > 0.5 * boxes[0][2] * boxes[0][3]:
+        return "More than one face is in the frame. Only the person registering should be in front of the camera."
+    return None
+
+@app.route('/check-face', methods=['POST'])
+def check_face():
+    upload = request.files.get('frame')
+    if upload is None:
+        return jsonify({"ok": False, "message": "No photo received."}), 400
+
+    frame = cv2.imdecode(np.frombuffer(upload.read(), np.uint8), cv2.IMREAD_COLOR)
+    if frame is None:
+        return jsonify({"ok": False, "message": "Invalid image."}), 400
+
+    try:
+        problem = face_problem(frame)
+    except Exception as e:
+        logging.error(f"Face check error: {e}")
+        return jsonify({"ok": False, "message": "Could not check the photo. Please try again."}), 500
+
+    if problem:
+        return jsonify({"ok": False, "message": problem})
+    return jsonify({"ok": True})
+
+@app.route('/attendance', methods=['POST'])
+def attendance():
+    client_id = request.form.get('client_id', '').strip()[:64]
+    action = request.form.get('action', '').strip()
+    if not client_id or action not in ('Time In', 'Time Out'):
+        return jsonify({"success": False, "message": "Invalid request."}), 400
+
+    state = get_client_state(client_id)
+    current = state["current"]
+    visitor = current["visitor"]
+    now = time.time()
+
+    if visitor is None or not current["verified"] or now - current["seen"] > ATTENDANCE_GRACE:
+        return jsonify({"success": False, "message": "Face not verified. Hold still in front of the camera first."}), 400
+
+    s_id = visitor["Student_ID"]
+    if now < state["cooldowns"].get(s_id, 0):
+        return jsonify({"success": False, "message": "Already recorded. Please wait a few seconds."}), 400
+
+    try:
+        ok, message = record_attendance(visitor, action)
+    except Exception as e:
+        logging.error(f"Error processing attendance in Supabase: {e}")
+        return jsonify({"success": False, "message": f"Could not record attendance for {pretty_name(visitor['Name'])}. Please try again."}), 500
+
+    if not ok:
+        return jsonify({"success": False, "message": message}), 400
+
+    category, college, detail_label, detail = describe_visitor(visitor)
+    clean_course = detail.split(" - Year")[0] if " - Year" in detail else detail
+    system_status = state["system_status"]
+    system_status["text"] = f"SUCCESS ({action}): {pretty_name(visitor['Name'])} | ID: {s_id} | {clean_course}"
+    system_status["status"] = "success"
+    system_status["unknown_detected"] = False
+
+    now = time.time()
+    state["cooldown_timer"] = now + COOLDOWN_SECONDS
+    state["cooldowns"][s_id] = now + COOLDOWN_SECONDS
+    state["cooldowns"] = {k: v for k, v in state["cooldowns"].items() if v > now}
+    state["presence"]["id"] = None
+
+    return jsonify({"success": True, "message": message})
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     client_id = request.form.get('client_id', '').strip()[:64]
@@ -1233,6 +1676,8 @@ def analyze():
     frame = cv2.imdecode(np.frombuffer(upload.read(), np.uint8), cv2.IMREAD_COLOR)
     if frame is None:
         return jsonify({"error": "Invalid image."}), 400
+
+    ensure_recognizer_fresh()
 
     try:
         state = get_client_state(client_id)
@@ -1304,17 +1749,15 @@ def register():
 
         upload = request.files.get('frame')
         if upload is None:
-            return jsonify({"success": False, "message": "No face frame captured. Please position yourself in front of the camera."}), 400
+            return jsonify({"success": False, "message": "A face photo is required. Capture your face before submitting."}), 400
 
         captured_frame = cv2.imdecode(np.frombuffer(upload.read(), np.uint8), cv2.IMREAD_COLOR)
         if captured_frame is None:
             return jsonify({"success": False, "message": "Failed to process image frame."}), 400
 
-        reg_boxes = detect_faces(cv2.cvtColor(captured_frame, cv2.COLOR_BGR2GRAY))
-        if not reg_boxes:
-            return jsonify({"success": False, "message": "No clear face found in the captured frame. Face the camera in good light and try again."}), 400
-        if len(reg_boxes) > 1 and reg_boxes[1][2] * reg_boxes[1][3] > 0.5 * reg_boxes[0][2] * reg_boxes[0][3]:
-            return jsonify({"success": False, "message": "More than one face is in the frame. Only the person registering should be in front of the camera."}), 400
+        problem = face_problem(captured_frame)
+        if problem:
+            return jsonify({"success": False, "message": problem}), 400
 
         normalized_name = f"{surname}, {fname}, {mname or 'N/A'}, {suffix}"
         
@@ -1344,27 +1787,11 @@ def register():
             "image_path": public_url
         }).execute()
 
-        ph_tz = timezone(timedelta(hours=8))
-        timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
-        supabase.table("logs").insert({
-            "student_id": student_id,
-            "normalized_name": normalized_name,
-            "college": college,
-            "course_year": course,
-            "action": "Time In",
-            "timestamp": timestamp
-        }).execute()
-
         load_recognizer_training()
-
-        with client_states_lock:
-            protect_until = time.time() + REGISTER_COOLDOWN
-            for st in client_states.values():
-                st["cooldowns"][student_id] = protect_until
 
         return jsonify({
             "success": True, 
-            "message": f"Successfully registered and timed in {normalized_name} ({user_type})!"
+            "message": f"Successfully registered {normalized_name} ({user_type}). Face the camera and press Time In to record attendance."
         })
     except Exception as e:
         error_str = str(e)
