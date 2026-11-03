@@ -53,7 +53,7 @@ GUARD_TEMPLATE = """<!DOCTYPE html>
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
     <div class="max-w-6xl mx-auto space-y-5">
-        <header class="glass rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
+        <header class="glass relative z-30 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
@@ -73,7 +73,7 @@ GUARD_TEMPLATE = """<!DOCTYPE html>
                     <button id="nav-menu-btn" type="button" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
-                    <div id="nav-menu-panel" role="menu" class="hidden absolute right-0 top-12 mt-2 w-56 glass-strong rounded-xl py-1.5 z-40">
+                    <div id="nav-menu-panel" role="menu" class="hidden absolute right-0 top-12 mt-2 w-56 glass-strong bg-[#14071f] rounded-xl py-1.5 z-50 overflow-hidden">
                         <a href="/scanner" role="menuitem" class="block px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-colors">Student Scanner</a>
                         <a href="/admin-login" role="menuitem" class="block px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-colors">Admin Dashboard</a>
                         <div class="my-1.5 border-t border-white/10"></div>
