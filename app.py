@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from flask import Flask, render_template_string, request, jsonify, redirect, url_for, session
 from supabase import create_client, Client
+from supabase_auth import datetime
 from datetime import datetime, timezone, timedelta
 from admin import admin_bp
 from guard import guard_bp
@@ -44,8 +45,8 @@ last_sync_check = 0.0
 SYNC_INTERVAL = 5
 sync_lock = threading.Lock()
 
-VERIFICATION_DELAY = 2.5
-COOLDOWN_SECONDS = 5
+VERIFICATION_DELAY = 0.5
+COOLDOWN_SECONDS = 3
 ATTENDANCE_GRACE = 2.0
 FACE_LOST_RESET = 1.5
 
@@ -69,7 +70,6 @@ def new_client_state():
         "cooldowns": {},
         "verifying": {},
         "last_face_seen_time": 0,
-        "last_analyze": 0,
         "last_active": time.time(),
         "current": {"visitor": None, "verified": False, "seen": 0},
         "presence": {"id": None, "data": None, "fetched": 0},
@@ -102,7 +102,6 @@ face_cascade = cv2.CascadeClassifier(cascade_path)
 
 
 def detect_faces(gray, relaxed=False):
-    """Detect faces on a grayscale frame. Returns boxes sorted largest first."""
     frame_w = gray.shape[1]
     min_side = max(30 if relaxed else 48, int(frame_w * (0.04 if relaxed else MIN_FACE_RATIO)))
     equalized = cv2.equalizeHist(gray)
@@ -135,7 +134,6 @@ def face_from_gray(gray, box):
 
 
 def augment_face(face):
-    """Generates robust variations (flips, shifts, lighting) to fix 1-shot learning weakness."""
     samples = [face]
     h, w = face.shape
     
@@ -157,7 +155,6 @@ def augment_face(face):
 
 
 def extract_training_face(gray, label):
-    """Registration stores the whole camera frame, so find and crop the face before training."""
     boxes = detect_faces(gray) or detect_faces(gray, relaxed=True)
     if boxes:
         return face_from_gray(gray, boxes[0])
@@ -300,7 +297,6 @@ load_recognizer_training()
 
 
 def identify_face(face_roi):
-    """Return (visitor or None, best_distance). Call while holding cv_lock."""
     ranked = None
     try:
         collector = cv2.face.StandardCollector_create()
@@ -623,298 +619,294 @@ HTML_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GuardGate</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body { height: 100%; width: 100%; margin: 0; }
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background:
-                radial-gradient(60rem 40rem at 90% -10%, rgba(16, 185, 129, 0.18), transparent 60%),
-                radial-gradient(50rem 40rem at -10% 110%, rgba(20, 184, 166, 0.12), transparent 60%),
-                #05100c;
+            background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%);
         }
-        .glass { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.09); backdrop-filter: blur(14px); }
-        .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #34d399, transparent); animation: sweep 2.4s ease-in-out infinite; }
-        @keyframes sweep { 0% { top: 6%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { top: 94%; opacity: 0; } }
+        .app-root {
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+        }
+            .scan-active { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.45) !important; }
     </style>
 </head>
-<body class="text-slate-100 antialiased">
+<body class="text-slate-800 antialiased overflow-hidden">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-[calc(100vw-2.5rem)]"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
-    <div class="min-h-full flex flex-col">
+    <div class="app-root flex flex-col">
 
-        <header class="shrink-0 px-5 sm:px-10 py-4 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-emerald-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        <header class="shrink-0 px-4 sm:px-8 py-3 border-b border-emerald-900/10 bg-white/60 backdrop-blur flex items-center">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-800/15 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 </div>
-                <div>
-                    <h1 class="text-xl font-extrabold tracking-tight leading-none">GuardGate</h1>
-                    <p class="text-[11px] font-medium text-emerald-300/70 mt-1">Dormitory Entry Scanner</p>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl sm:text-2xl font-bold text-emerald-950 tracking-tight leading-tight">GuardGate</h1>
+                    </div>
+                    
                 </div>
-            </div>
-            <div class="text-right">
-                <p id="clock" class="text-lg sm:text-xl font-bold tabular-nums leading-none">--:--:--</p>
-                <p id="date" class="text-[11px] font-medium text-slate-400 mt-1">&nbsp;</p>
             </div>
         </header>
 
-        <main class="flex-1 px-4 sm:px-10 pb-6 grid grid-cols-1 lg:grid-cols-5 gap-5 lg:gap-6 content-start">
+        <main class="flex-1 min-h-0 p-3 sm:p-5">
+            <div class="h-full w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 overflow-hidden">
 
-            <section class="lg:col-span-3 flex flex-col gap-4 min-w-0">
-                <div class="glass rounded-3xl p-2.5">
-                    <div id="camera-container" class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black">
-                        <video id="webcam" autoplay playsinline muted class="absolute inset-0 h-full w-full object-contain -scale-x-100"></video>
+                <section class="order-2 md:order-1 flex-1 min-w-0 min-h-0 flex flex-col">
+                    <div class="shrink-0 px-4 sm:px-5 py-3 border-b border-emerald-900/5 bg-emerald-50/40 flex justify-between items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-900 flex items-center gap-2 min-w-0">
+                            <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                            <span class="truncate">Visitor Credentials</span>
+                        </span>
+                        <span class="shrink-0 text-[11px] font-medium text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                        </span>
+                    </div>
+
+                    <div class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+                        <div id="status-panel" class="rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-4 py-3 text-center text-sm font-medium text-emerald-800 transition-colors duration-300">
+                            Scanner locked. Press Time In or Time Out to begin.
+                        </div>
+
+                        <div class="rounded-xl border border-emerald-900/10 overflow-hidden">
+                            <div class="flex items-center gap-4 p-4 bg-emerald-50/50 border-b border-emerald-900/10">
+                                <div id="v-avatar" class="w-14 h-14 shrink-0 rounded-2xl bg-slate-300 text-white flex items-center justify-center text-lg font-bold">--</div>
+                                <div class="min-w-0 flex-1">
+                                    <p id="v-name" class="text-base sm:text-lg font-bold text-emerald-950 truncate">No visitor detected</p>
+                                    <p id="v-id" class="text-xs font-medium text-emerald-900/60 truncate">Step in front of the camera</p>
+                                </div>
+                                <span id="v-presence" class="hidden shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border"></span>
+                            </div>
+                            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Category</dt>
+                                    <dd id="v-category" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">College</dt>
+                                    <dd id="v-college" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <dt id="v-detail-label" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Course / Dept / Address</dt>
+                                    <dd id="v-detail" class="mt-0.5 text-sm font-semibold text-slate-800 break-words">-</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Last Action</dt>
+                                    <dd id="v-last-action" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Recorded At</dt>
+                                    <dd id="v-last-time" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="shrink-0 p-4 sm:p-5 border-t border-emerald-900/10 bg-white">
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="time-in-btn" type="button" onclick="armScanner('Time In')" class="py-3 px-4 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"><span>Time In</span></button>
+                            <button id="time-out-btn" type="button" onclick="armScanner('Time Out')" class="py-3 px-4 text-sm font-semibold text-rose-700 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"><span>Time Out</span></button>
+                        </div>
+                        <button id="register-btn" type="button" onclick="openModal()" class="hidden mt-3 w-full py-2.5 px-4 text-sm font-semibold text-emerald-800 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition shadow-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                            Register New Visitor
+                        </button>
+                    </div>
+                </section>
+
+                <aside class="order-1 md:order-2 shrink-0 w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-l border-emerald-900/10 bg-slate-50/60 p-3 md:p-4 flex flex-col min-h-0">
+                    <div class="mb-2 md:mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                        <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Live Camera
+                    </div>
+
+                    <div id="camera-container" class="relative bg-slate-900 w-full max-w-[14rem] md:max-w-none mx-auto aspect-video rounded-xl overflow-hidden shadow-sm">
+                        <video id="webcam" autoplay playsinline muted class="object-contain h-full w-full opacity-95 -scale-x-100"></video>
                         <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
 
-                        <div id="scan-fx" class="hidden absolute inset-0 pointer-events-none">
-                            <div class="scan-line"></div>
+                        <div id="lock-container" class="absolute inset-0 p-3 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-2">
+                            <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <p class="text-xs font-semibold text-slate-200">Scanner Locked</p>
+                            <p class="text-[11px] text-slate-400">Press Time In or Time Out to start scanning.</p>
                         </div>
 
-                        <div id="mode-chip" class="hidden absolute top-3 left-3 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur px-3 py-1.5 text-xs font-bold text-white border border-white/10">
-                            <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span></span>
-                            <span id="mode-chip-text">Scanning</span>
-                        </div>
-
-                        <div id="idle-overlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-6 bg-gradient-to-b from-slate-950 to-emerald-950">
-                            <div class="w-16 h-16 rounded-full bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center">
-                                <svg class="w-8 h-8 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                            </div>
-                            <p class="text-base sm:text-lg font-bold">Scanner is off</p>
-                            <p class="text-xs sm:text-sm text-slate-400 max-w-xs">Press <span class="text-emerald-300 font-semibold">Time In</span> or <span class="text-rose-300 font-semibold">Time Out</span> below to turn on the camera.</p>
-                        </div>
-
-                        <div id="status-panel" class="absolute bottom-3 left-3 right-3 rounded-2xl border px-4 py-3 text-center text-sm font-semibold backdrop-blur transition-colors duration-300 bg-slate-900/70 text-slate-100 border-white/10">
-                            Choose Time In or Time Out to start scanning.
+                        <div id="standby-container" class="hidden absolute inset-0 p-3 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-2">
+                            <svg class="w-6 h-6 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <p class="text-xs font-semibold text-slate-200">Scanner on Standby</p>
+                            <p class="text-[11px] text-slate-400">Step in front of the camera to wake it up.</p>
                         </div>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-2 gap-3 sm:gap-4">
-                    <button id="time-in-btn" type="button" onclick="startScan('Time In')" class="rounded-2xl px-5 py-4 text-left transition border bg-emerald-500 hover:bg-emerald-400 text-emerald-950 border-emerald-400">
-                        <span class="flex items-center gap-2 text-lg font-extrabold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                            Time In
-                        </span>
-                        <span id="time-in-sub" class="block text-xs font-semibold opacity-70 mt-1">Start scanner to enter</span>
-                    </button>
-                    <button id="time-out-btn" type="button" onclick="startScan('Time Out')" class="rounded-2xl px-5 py-4 text-left transition border bg-white/5 hover:bg-white/10 text-white border-white/15">
-                        <span class="flex items-center gap-2 text-lg font-extrabold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            Time Out
-                        </span>
-                        <span id="time-out-sub" class="block text-xs font-semibold opacity-60 mt-1">Start scanner to leave</span>
-                    </button>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3">
-                    <button id="cancel-btn" type="button" onclick="stopScan()" class="hidden px-4 py-2.5 text-sm font-semibold text-slate-200 rounded-xl border border-white/15 hover:bg-white/10 transition">Cancel scan</button>
-                    <button id="register-btn" type="button" onclick="openModal()" class="px-4 py-2.5 text-sm font-semibold text-emerald-200 rounded-xl border border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-400/20 transition flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                        Register New Visitor
-                    </button>
-                </div>
-            </section>
-
-            <aside class="lg:col-span-2 flex flex-col gap-4 min-w-0">
-                <div class="glass rounded-3xl overflow-hidden">
-                    <div class="px-5 pt-4 pb-3 flex items-center justify-between">
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-300/80">Visitor Credentials</span>
-                        <span class="text-[10px] font-semibold text-slate-400 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full">2.5s hold to verify</span>
-                    </div>
-                    <div class="px-5 pb-5">
-                        <div class="flex items-center gap-4">
-                            <div id="v-avatar" class="w-16 h-16 shrink-0 rounded-2xl bg-white/10 text-white/60 flex items-center justify-center text-xl font-extrabold">--</div>
-                            <div class="min-w-0 flex-1">
-                                <p id="v-name" class="text-lg font-extrabold truncate">No visitor detected</p>
-                                <p id="v-id" class="text-xs font-medium text-slate-400 truncate">Waiting for a scan</p>
-                            </div>
-                            <span id="v-presence" class="hidden shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full border"></span>
-                        </div>
-                        <dl class="mt-5 grid grid-cols-2 gap-x-5 gap-y-4">
-                            <div>
-                                <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Category</dt>
-                                <dd id="v-category" class="mt-1 text-sm font-semibold">-</dd>
-                            </div>
-                            <div>
-                                <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500">College</dt>
-                                <dd id="v-college" class="mt-1 text-sm font-semibold">-</dd>
-                            </div>
-                            <div class="col-span-2">
-                                <dt id="v-detail-label" class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Course / Dept / Address</dt>
-                                <dd id="v-detail" class="mt-1 text-sm font-semibold break-words">-</dd>
-                            </div>
-                            <div>
-                                <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Last Action</dt>
-                                <dd id="v-last-action" class="mt-1 text-sm font-semibold">-</dd>
-                            </div>
-                            <div>
-                                <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Recorded At</dt>
-                                <dd id="v-last-time" class="mt-1 text-sm font-semibold">-</dd>
-                            </div>
-                        </dl>
-                    </div>
-                </div>
-
-                <ol class="glass rounded-3xl p-5 space-y-3 text-sm text-slate-300">
-                    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-emerald-400/15 text-emerald-300 text-xs font-extrabold flex items-center justify-center">1</span>Press Time In or Time Out to wake the scanner.</li>
-                    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-emerald-400/15 text-emerald-300 text-xs font-extrabold flex items-center justify-center">2</span>Face the camera and hold still until verified.</li>
-                    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-emerald-400/15 text-emerald-300 text-xs font-extrabold flex items-center justify-center">3</span>Your attendance is recorded automatically.</li>
-                    <li class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs font-extrabold flex items-center justify-center">?</span>Not recognized? Use Register New Visitor.</li>
-                </ol>
-            </aside>
+                    <ol class="hidden md:block mt-4 space-y-2 text-xs text-slate-600 leading-relaxed overflow-y-auto min-h-0">
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">1</span>Press Time In to enter or Time Out to leave. The scanner stays locked until you do.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">2</span>Face the camera and hold still until you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">3</span>Your attendance is recorded automatically once you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] font-bold flex items-center justify-center">?</span>Not recognized? Use Register New Visitor.</li>
+                    </ol>
+                </aside>
+            </div>
         </main>
     </div>
 
-    <div id="reg-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
-        <div class="bg-white text-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden relative">
-
-            <div class="shrink-0 px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-emerald-50/70">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+    <div id="reg-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 transition-opacity duration-300 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden border border-emerald-900/15 relative">
+            
+            <div class="shrink-0 px-6 py-4 border-b border-emerald-900/10 flex justify-between items-center bg-emerald-50/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center">
+   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <div>
-                        <h2 class="text-base font-extrabold text-emerald-950">New Visitor Registration</h2>
-                        <p class="text-[11px] text-emerald-800/70 font-medium">Select your category to configure required details</p>
+   <h2 class="text-base font-bold text-emerald-950">New Visitor Registration</h2>
+   <p class="text-[11px] text-emerald-800/70 font-medium">Select your category to configure required details</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-700 transition-colors rounded-xl p-1.5 hover:bg-emerald-100/60">
+                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-700 transition-colors rounded-xl p-1.5 hover:bg-emerald-100/50">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-
+            
             <form id="reg-form" onsubmit="submitRegistration(event)" class="p-4 sm:p-6 overflow-y-auto min-h-0 flex-1">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <div class="md:col-span-3 min-w-0">
-
-                <div class="mb-6 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-1.5">
-                        User Type <span class="text-rose-600">*</span>
+                
+                <div class="mb-6 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-1.5 flex items-center gap-1.5">
+   <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+   User Type <span class="text-rose-600">*</span>
                     </label>
-                    <select id="user_type" name="user_type" onchange="handleUserTypeChange(this.value)" class="w-full border border-emerald-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm cursor-pointer">
-                        <option value="Student">Student</option>
-                        <option value="Parent">Parent</option>
-                        <option value="Faculty">Faculty</option>
-                        <option value="Others">Others</option>
+                    <select id="user_type" name="user_type" onchange="handleUserTypeChange(this.value)" class="w-full border border-emerald-300 rounded-lg px-3.5 py-2.5 text-sm font-semibold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm cursor-pointer">
+   <option value="Student">Student</option>
+   <option value="Parent">Parent</option>
+   <option value="Faculty">Faculty</option>
+   <option value="Others">Others</option>
                     </select>
-                    <p id="user_type_hint" class="text-[11px] text-emerald-800/80 mt-1.5 font-medium">Student registration requiring Student ID, College, Year Level, and Course.</p>
+                    <p id="user_type_hint" class="text-[11px] text-emerald-800/80 mt-1.5 font-medium">Standard student registration requiring Student ID and College.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
-                        <input type="text" name="surname" id="field_surname" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
+   <input type="text" name="surname" id="field_surname" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">First Name <span class="text-rose-600">*</span></label>
-                        <input type="text" name="fname" id="field_fname" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">First Name <span class="text-rose-600">*</span></label>
+   <input type="text" name="fname" id="field_fname" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-                        <label id="label_mname" class="block text-xs font-semibold text-slate-700">Middle Name <span class="text-slate-400 font-normal">(Optional)</span></label>
-                        <input type="text" name="mname" id="field_mname" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label id="label_mname" class="block text-xs font-semibold text-slate-700">Middle Name <span class="text-slate-400 font-normal">(Optional)</span></label>
+   <input type="text" name="mname" id="field_mname" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div id="group-suffix" class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">Suffix</label>
-                        <select name="suffix" id="field_suffix" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white">
-                            <option value="N/A">N/A</option>
-                            <option value="Jr.">Jr.</option>
-                            <option value="Sr.">Sr.</option>
-                            <option value="III">III</option>
-                            <option value="IV">IV</option>
-                        </select>
+   <label class="block text-xs font-semibold text-slate-700">Suffix</label>
+   <select name="suffix" id="field_suffix" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white">
+       <option value="N/A">N/A</option>
+       <option value="Jr.">Jr.</option>
+       <option value="Sr.">Sr.</option>
+       <option value="III">III</option>
+       <option value="IV">IV</option>
+   </select>
                     </div>
                 </div>
 
                 <div id="group-student" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
-                        <select name="college" id="field_college" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
-                            <option value="" disabled selected>Select College...</option>
-                            <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
-                            <option value="CAS">CAS : College of Arts and Sciences</option>
-                            <option value="COE">COE : College of Engineering</option>
-                            <option value="CBEA">CBEA : College of Business, Economics and Accountancy</option>
-                            <option value="CAFSD">CAFSD : College of Agriculture, Forestry and Sustainable Development</option>
-                            <option value="CHS">CHS : College of Health Sciences</option>
-                            <option value="COL">COL : College of Law</option>
-                            <option value="CASAT">CASAT : College of Aquatic Sciences and Applied Technology</option>
-                            <option value="CIT">CIT : College of Industrial Technology</option>
-                            <option value="CTE">CTE : College of Teacher Education</option>
-                        </select>
+   <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
+   <select name="college" id="field_college" required class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+       <option value="" disabled selected>Select College...</option>
+       <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
+       <option value="CAS">CAS : College of Arts and Sciences</option>
+       <option value="COE">COE : College of Engineering</option>
+       <option value="CBEA">CBEA : College of Business, Economics and Accountancy</option>
+       <option value="CAFSD">CAFSD : College of Agriculture, Forestry and Sustainable Development</option>
+       <option value="CHS">CHS : College of Health Sciences</option>
+       <option value="COL">COL : College of Law</option>
+       <option value="CASAT">CASAT : College of Aquatic Sciences and Applied Technology</option>
+       <option value="CIT">CIT : College of Industrial Technology</option>
+       <option value="CTE">CTE : College of Teacher Education</option>
+   </select>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">Student ID <span class="text-rose-600">*</span></label>
-                        <input type="text" name="student_id" id="field_student_id" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Student ID <span class="text-rose-600">*</span></label>
+   <input type="text" name="student_id" id="field_student_id" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">Year Level <span class="text-rose-600">*</span></label>
-                        <select name="year_level" id="field_year" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
-                            <option value="" disabled selected>Select Year...</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
+   <label class="block text-xs font-semibold text-slate-700">Year Level <span class="text-rose-600">*</span></label>
+   <select name="year_level" id="field_year" required class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+       <option value="" disabled selected>Select Year...</option>
+       <option value="1">1</option>
+       <option value="2">2</option>
+       <option value="3">3</option>
+       <option value="4">4</option>
+   </select>
                     </div>
                     <div class="space-y-1.5 md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700">Course / Program <span class="text-rose-600">*</span></label>
-                        <input type="text" name="course" id="field_course" required maxlength="40" placeholder="e.g. BSCS" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Course / Program <span class="text-rose-600">*</span></label>
+   <input type="text" name="course" id="field_course" required maxlength="40" placeholder="e.g. BSCS" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
                 <div id="group-parent" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
-                        <input type="text" name="parent_address" id="field_parent_address" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
+   <input type="text" name="parent_address" id="field_parent_address" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
                 <div id="group-faculty" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
-                        <select name="faculty_college" id="field_faculty_college" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
-                            <option value="" disabled selected>Select College...</option>
-                            <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
-                            <option value="CAS">CAS : College of Arts and Sciences</option>
-                            <option value="COE">COE : College of Engineering</option>
-                            <option value="CBEA">CBEA : College of Business, Economics and Accountancy</option>
-                            <option value="CAFSD">CAFSD : College of Agriculture, Forestry and Sustainable Development</option>
-                            <option value="CHS">CHS : College of Health Sciences</option>
-                            <option value="COL">COL : College of Law</option>
-                            <option value="CASAT">CASAT : College of Aquatic Sciences and Applied Technology</option>
-                            <option value="CIT">CIT : College of Industrial Technology</option>
-                            <option value="CTE">CTE : College of Teacher Education</option>
-                        </select>
+   <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
+   <select name="faculty_college" id="field_faculty_college" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+       <option value="" disabled selected>Select College...</option>
+       <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
+       <option value="CAS">CAS : College of Arts and Sciences</option>
+       <option value="COE">COE : College of Engineering</option>
+       <option value="CBEA">CBEA : College of Business, Economics and Accountancy</option>
+       <option value="CAFSD">CAFSD : College of Agriculture, Forestry and Sustainable Development</option>
+       <option value="CHS">CHS : College of Health Sciences</option>
+       <option value="COL">COL : College of Law</option>
+       <option value="CASAT">CASAT : College of Aquatic Sciences and Applied Technology</option>
+       <option value="CIT">CIT : College of Industrial Technology</option>
+       <option value="CTE">CTE : College of Teacher Education</option>
+   </select>
                     </div>
                     <div class="space-y-1.5 md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700">Department <span class="text-rose-600">*</span></label>
-                        <input type="text" name="department" id="field_department" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Department<span class="text-rose-600">*</span></label>
+   <input type="text" name="department" id="field_department" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
                 <div id="group-others" class="hidden mt-4 pt-4 border-t border-slate-100">
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
-                        <input type="text" name="other_address" id="field_other_address" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
+   <input type="text" name="other_address" id="field_other_address" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
                     </div>
                 </div>
 
                 </div>
 
                 <div class="md:col-span-2 min-w-0">
-                    <div class="md:sticky md:top-0 rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4">
+                    <div class="md:sticky md:top-0 rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4">
                         <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-2">
                             Face Capture <span class="text-rose-600">*</span>
                         </label>
-                        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900">
+                        <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900">
                             <video id="reg-video" autoplay playsinline muted class="absolute inset-0 h-full w-full object-contain -scale-x-100"></video>
                             <img id="reg-preview" alt="Captured face" class="hidden absolute inset-0 h-full w-full object-contain bg-slate-900">
                         </div>
                         <p id="capture-hint" class="mt-2 text-[11px] font-medium text-emerald-800/80">Face the camera in good light, then press Capture Photo.</p>
                         <div class="mt-3 grid grid-cols-1 gap-2">
-                            <button type="button" id="capture-btn" onclick="captureFace()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                            <button type="button" id="capture-btn" onclick="captureFace()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                                 Capture Photo
                             </button>
                             <button type="button" id="retake-btn" onclick="retakeFace()" class="hidden w-full px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">
@@ -925,25 +917,31 @@ HTML_TEMPLATE = """
                 </div>
                 </div>
 
-                <div id="cancel-confirm-box" class="hidden mt-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+                <div id="cancel-confirm-box" class="hidden mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
                     <div class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <div class="flex-1">
-                            <p class="text-xs font-bold">Discard entered information?</p>
-                            <p class="text-[11px] text-amber-800 mt-0.5">You have unsaved changes in the form. Are you sure you want to exit?</p>
-                            <div class="mt-3 flex items-center gap-2">
-                                <button type="button" onclick="dismissConfirmClose(true)" class="px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-sm">Yes, Discard</button>
-                                <button type="button" onclick="dismissConfirmClose(false)" class="px-3 py-1.5 text-xs font-semibold text-amber-900 bg-white border border-amber-300 hover:bg-amber-100 rounded-lg transition shadow-sm">Keep Editing</button>
-                            </div>
-                        </div>
+   <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+   <div class="flex-1">
+       <p class="text-xs font-bold">Discard entered information?</p>
+       <p class="text-[11px] text-amber-800 mt-0.5">You have unsaved changes in the form. Are you sure you want to exit?</p>
+       <div class="mt-3 flex items-center gap-2">
+           <button type="button" onclick="dismissConfirmClose(true)" class="px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-sm">
+               Yes, Discard
+           </button>
+           <button type="button" onclick="dismissConfirmClose(false)" class="px-3 py-1.5 text-xs font-semibold text-amber-900 bg-white border border-amber-300 hover:bg-amber-100 rounded-lg transition shadow-sm">
+               Keep Editing
+           </button>
+       </div>
+   </div>
                     </div>
                 </div>
 
                 <div class="sticky bottom-0 z-10 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 mt-6 px-4 sm:px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">Cancel</button>
-                    <button id="submit-btn" type="submit" disabled class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        Save
+                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+   Cancel
+                    </button>
+                    <button id="submit-btn" type="submit" disabled class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
+   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+   Save
                     </button>
                 </div>
             </form>
@@ -951,68 +949,48 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
-        const SCAN_TIMEOUT_MS = 45000;
-        const ANALYZE_INTERVAL_MS = 450;
-        const SAMPLE_WIDTH = 960;
-        const BOX_COLORS = { green: '#34d399', red: '#fb7185', amber: '#fbbf24' };
-        const STATUS_STYLES = {
-            normal: 'bg-slate-900/70 text-slate-100 border-white/10',
-            success: 'bg-emerald-500/90 text-white border-emerald-300/40',
-            verifying: 'bg-emerald-950/80 text-emerald-100 border-emerald-400/40 animate-pulse',
-            error: 'bg-rose-600/90 text-white border-rose-300/40',
-            warning: 'bg-amber-500/90 text-amber-950 border-amber-300/40'
-        };
-        const STATUS_BASE = 'absolute bottom-3 left-3 right-3 rounded-2xl border px-4 py-3 text-center text-sm font-semibold backdrop-blur transition-colors duration-300 ';
-        const IDLE_TEXT = 'Choose Time In or Time Out to start scanning.';
-
-        let mode = null;
-        let stream = null;
-        let loopToken = 0;
-        let recording = false;
-        let armTimer = null;
-        let modalOpen = false;
+        let lastFaceTime = Date.now();
+        let isCameraHidden = false;
+        let actionBusy = false;
+        let scanArmed = false;
+        let armedAction = null;
+        let armedAt = 0;
+        let registering = false;
+        let scanLoopRunning = false;
+        const SCAN_WINDOW_MS = 30000;
+        const LOCKED_TEXT = 'Scanner locked. Press Time In or Time Out to begin.';
         let capturedBlob = null;
         let capturedUrl = null;
-
-        const clientId = (function () {
-            let id = null;
-            try { id = sessionStorage.getItem('gg_client_id'); } catch (e) {}
-            if (!id) {
-                id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
-                try { sessionStorage.setItem('gg_client_id', id); } catch (e) {}
-            }
-            return id;
-        })();
-
-        const video = document.getElementById('webcam');
-        const overlay = document.getElementById('overlay');
-        const regVideo = document.getElementById('reg-video');
-        const regPreview = document.getElementById('reg-preview');
-        const sampler = document.createElement('canvas');
 
         function showToast(message, type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
 
             const toast = document.createElement('div');
-            toast.className = 'pointer-events-auto flex items-start gap-3 p-4 rounded-2xl shadow-xl border transition-all duration-300 transform translate-y-2 opacity-0 text-sm font-medium';
-
+            toast.className = 'pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border transition-all duration-300 transform translate-y-2 opacity-0 text-sm font-medium';
+            
             let iconSvg = '';
             if (type === 'success') {
-                toast.className += ' bg-emerald-50 text-emerald-900 border-emerald-200';
-                iconSvg = '<svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                toast.className += ' bg-emerald-50 text-emerald-900 border-emerald-200 shadow-emerald-900/5';
+                iconSvg = `<svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
             } else if (type === 'error') {
-                toast.className += ' bg-rose-50 text-rose-900 border-rose-200';
-                iconSvg = '<svg class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                toast.className += ' bg-rose-50 text-rose-900 border-rose-200 shadow-rose-900/5';
+                iconSvg = `<svg class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
             } else if (type === 'warning') {
-                toast.className += ' bg-amber-50 text-amber-900 border-amber-200';
-                iconSvg = '<svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+                toast.className += ' bg-amber-50 text-amber-900 border-amber-200 shadow-amber-900/5';
+                iconSvg = `<svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
             } else {
                 toast.className += ' bg-slate-50 text-slate-900 border-slate-200';
-                iconSvg = '<svg class="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                iconSvg = `<svg class="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
             }
 
-            toast.innerHTML = iconSvg + '<div data-msg class="flex-1 text-xs leading-relaxed break-words"></div><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>';
+            toast.innerHTML = `
+                ${iconSvg}
+                <div data-msg class="flex-1 text-xs leading-relaxed break-words"></div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
             toast.querySelector('[data-msg]').textContent = message;
 
             container.appendChild(toast);
@@ -1027,61 +1005,76 @@ HTML_TEMPLATE = """
             }, duration);
         }
 
-        function tickClock() {
-            const now = new Date();
-            const opts = { timeZone: 'Asia/Manila' };
-            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', Object.assign({ hour: '2-digit', minute: '2-digit', second: '2-digit' }, opts));
-            document.getElementById('date').innerText = now.toLocaleDateString('en-US', Object.assign({ weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }, opts));
-        }
-        tickClock();
-        setInterval(tickClock, 1000);
+        function handleUserTypeChange(type) {
+            const studentGroup = document.getElementById('group-student');
+            const parentGroup = document.getElementById('group-parent');
+            const facultyGroup = document.getElementById('group-faculty');
+            const othersGroup = document.getElementById('group-others');
+            const suffixGroup = document.getElementById('group-suffix');
+            const mnameInput = document.getElementById('field_mname');
+            const mnameLabel = document.getElementById('label_mname');
+            const hintText = document.getElementById('user_type_hint');
 
-        function setStatus(text, status) {
-            const panel = document.getElementById('status-panel');
-            panel.innerText = text;
-            panel.className = STATUS_BASE + (STATUS_STYLES[status] || STATUS_STYLES.normal);
+            studentGroup.classList.add('hidden');
+            parentGroup.classList.add('hidden');
+            facultyGroup.classList.add('hidden');
+            othersGroup.classList.add('hidden');
+
+            document.getElementById('field_student_id').required = false;
+            document.getElementById('field_college').required = false;
+            document.getElementById('field_course').required = false;
+            document.getElementById('field_year').required = false;
+            document.getElementById('field_parent_address').required = false;
+            document.getElementById('field_department').required = false;
+            document.getElementById('field_faculty_college').required = false;
+            document.getElementById('field_other_address').required = false;
+            
+            mnameInput.required = false;
+            mnameLabel.innerHTML = 'Middle Name <span class="text-slate-400 font-normal">(Optional)</span>';
+
+            if (type === 'Student') {
+                studentGroup.classList.remove('hidden');
+                suffixGroup.classList.remove('hidden');
+                document.getElementById('field_student_id').required = true;
+                document.getElementById('field_college').required = true;
+                document.getElementById('field_course').required = true;
+                document.getElementById('field_year').required = true;
+                hintText.innerText = 'Student registration requiring Student ID, College, Year Level, and Course.';
+            } else if (type === 'Parent') {
+                parentGroup.classList.remove('hidden');
+                suffixGroup.classList.remove('hidden');
+                mnameInput.required = true;
+                mnameLabel.innerHTML = 'Middle Name <span class="text-rose-600">*</span>';
+                document.getElementById('field_parent_address').required = true;
+                hintText.innerText = 'Parent registration: requires Surname, First Name, Middle Name, and Address. Suffix is optional.';
+            } else if (type === 'Faculty') {
+                facultyGroup.classList.remove('hidden');
+                suffixGroup.classList.remove('hidden');
+                document.getElementById('field_faculty_college').required = true;
+                document.getElementById('field_department').required = true;
+                hintText.innerText = 'Faculty registration: requires Name fields, your College, and the Department you teach in.';
+            } else if (type === 'Others') {
+                othersGroup.classList.remove('hidden');
+                suffixGroup.classList.remove('hidden');
+                document.getElementById('field_other_address').required = true;
+                hintText.innerText = 'Visitor / Guest registration: requires Name fields and Address/Purpose of visit.';
+            }
         }
 
         function setText(id, value) {
             document.getElementById(id).innerText = value;
         }
 
-        function updateModeUI() {
-            const inBtn = document.getElementById('time-in-btn');
-            const outBtn = document.getElementById('time-out-btn');
-            const base = 'rounded-2xl px-5 py-4 text-left transition border focus:outline-none focus:ring-4 disabled:opacity-60 disabled:cursor-not-allowed ';
-            const inOn = mode === 'Time In';
-            const outOn = mode === 'Time Out';
-
-            inBtn.className = base + (inOn
-                ? 'bg-emerald-300 text-emerald-950 border-emerald-200 ring-4 ring-emerald-400/30'
-                : 'bg-emerald-500 hover:bg-emerald-400 text-emerald-950 border-emerald-400 focus:ring-emerald-400/30');
-            outBtn.className = base + (outOn
-                ? 'bg-rose-300 text-rose-950 border-rose-200 ring-4 ring-rose-400/30'
-                : 'bg-white/5 hover:bg-white/10 text-white border-white/15 focus:ring-white/20');
-
-            setText('time-in-sub', inOn ? 'Scanning for Time In...' : 'Start scanner to enter');
-            setText('time-out-sub', outOn ? 'Scanning for Time Out...' : 'Start scanner to leave');
-            inBtn.disabled = recording;
-            outBtn.disabled = recording;
-
-            document.getElementById('cancel-btn').classList.toggle('hidden', !mode);
-            document.getElementById('idle-overlay').classList.toggle('hidden', !!mode);
-            document.getElementById('scan-fx').classList.toggle('hidden', !mode);
-            document.getElementById('mode-chip').classList.toggle('hidden', !mode);
-            if (mode) setText('mode-chip-text', 'Scanning for ' + mode);
-        }
-
         function renderVisitor(v) {
             const avatar = document.getElementById('v-avatar');
             const presence = document.getElementById('v-presence');
-            const avatarBase = 'w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-xl font-extrabold ';
+            const avatarBase = 'w-14 h-14 shrink-0 rounded-2xl text-white flex items-center justify-center text-lg font-bold ';
 
             if (!v) {
                 setText('v-avatar', '--');
-                avatar.className = avatarBase + 'bg-white/10 text-white/60';
+                avatar.className = avatarBase + 'bg-slate-300';
                 setText('v-name', 'No visitor detected');
-                setText('v-id', mode ? 'Step in front of the camera' : 'Waiting for a scan');
+                setText('v-id', 'Step in front of the camera');
                 presence.classList.add('hidden');
                 ['v-category', 'v-college', 'v-detail', 'v-last-action', 'v-last-time'].forEach(id => setText(id, '-'));
                 setText('v-detail-label', 'Course / Dept / Address');
@@ -1089,13 +1082,13 @@ HTML_TEMPLATE = """
             }
 
             setText('v-avatar', v.initials);
-            avatar.className = avatarBase + 'bg-gradient-to-br from-emerald-400 to-teal-500 text-emerald-950';
+            avatar.className = avatarBase + 'bg-emerald-700';
             setText('v-name', v.name);
             setText('v-id', 'ID Number: ' + v.id);
             presence.classList.remove('hidden');
             presence.innerText = v.inside ? 'Timed In' : 'Timed Out';
-            presence.className = 'shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full border ' +
-                (v.inside ? 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30' : 'bg-white/5 text-slate-300 border-white/15');
+            presence.className = 'shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border ' +
+                (v.inside ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200');
             setText('v-category', v.category);
             setText('v-college', v.college);
             setText('v-detail-label', v.detail_label);
@@ -1104,95 +1097,166 @@ HTML_TEMPLATE = """
             setText('v-last-time', v.last_timestamp || '-');
         }
 
-        function applyStatus(data) {
-            setStatus(data.text, data.status);
-            renderVisitor(data.visitor);
+        function paintStatus(data) {
+            const panel = document.getElementById('status-panel');
+            panel.innerText = data.text;
+            
+            let bgClass = 'bg-emerald-50/50', textClass = 'text-emerald-800', borderClass = 'border-emerald-900/10';
+            if (data.status === 'success') {
+                bgClass = 'bg-emerald-100/90'; textClass = 'text-emerald-950 font-bold'; borderClass = 'border-emerald-300';
+            } else if (data.status === 'verifying') {
+                bgClass = 'bg-emerald-100/60 animate-pulse'; textClass = 'text-emerald-900 font-semibold'; borderClass = 'border-emerald-300';
+            } else if (data.status === 'error') {
+                bgClass = 'bg-rose-50'; textClass = 'text-rose-700 font-semibold'; borderClass = 'border-rose-200';
+            } else if (data.status === 'warning') {
+                bgClass = 'bg-amber-50'; textClass = 'text-amber-800 font-semibold'; borderClass = 'border-amber-200';
+            }
+            
+            panel.className = `rounded-xl border px-4 py-3 text-center text-sm font-medium transition-colors duration-300 ${bgClass} ${textClass} ${borderClass}`;
         }
 
-        async function ensureCamera() {
-            if (stream && stream.active) return true;
+        function applyStatus(data) {
+            paintStatus(data);
+
+            const regBtn = document.getElementById('register-btn');
+            if (data.unknown_detected) {
+                regBtn.classList.remove('hidden');
+            } else {
+                regBtn.classList.add('hidden');
+            }
+
+            renderVisitor(data.visitor);
+            handleCameraVisibility(data.face_detected);
+        }
+
+        function handleCameraVisibility(faceDetected) {
+            const standbyContainer = document.getElementById('standby-container');
+
+            if (faceDetected) {
+                lastFaceTime = Date.now();
+                if (isCameraHidden) {
+                    isCameraHidden = false;
+                    standbyContainer.classList.add('hidden');
+                }
+            } else if (!isCameraHidden && Date.now() - lastFaceTime >= 5000) {
+                isCameraHidden = true;
+                standbyContainer.classList.remove('hidden');
+            }
+        }
+
+        function syncControls() {
+            [['Time In', 'time-in-btn'], ['Time Out', 'time-out-btn']].forEach(function (pair) {
+                const btn = document.getElementById(pair[1]);
+                const active = scanArmed && armedAction === pair[0];
+                btn.disabled = actionBusy;
+                btn.classList.toggle('scan-active', active);
+                btn.querySelector('span').innerText = active ? 'Scanning... tap to cancel' : pair[0];
+            });
+        }
+
+        function armScanner(action) {
+            if (actionBusy) return;
+            if (scanArmed && armedAction === action) {
+                disarmScanner();
+                return;
+            }
+            armedAction = action;
+            scanArmed = true;
+            armedAt = Date.now();
+            lastFaceTime = Date.now();
+            isCameraHidden = false;
+            document.getElementById('lock-container').classList.add('hidden');
+            document.getElementById('standby-container').classList.add('hidden');
+            renderVisitor(null);
+            paintStatus({ text: 'Scanner unlocked for ' + action + '. Face the camera.', status: 'verifying' });
+            syncControls();
+            analyzeLoop();
+        }
+
+        function disarmScanner(text, status) {
+            scanArmed = false;
+            armedAction = null;
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            document.getElementById('standby-container').classList.add('hidden');
+            document.getElementById('lock-container').classList.remove('hidden');
+            paintStatus({ text: text || LOCKED_TEXT, status: status || 'normal' });
+            syncControls();
+        }
+
+        async function recordAttendance(action) {
+            if (actionBusy) return;
+            actionBusy = true;
+            syncControls();
+
+            const body = new FormData();
+            body.append('client_id', clientId);
+            body.append('action', action);
+
+            let ok = false;
+            let message = '';
+            try {
+                const res = await fetch('/attendance', { method: 'POST', body: body });
+                const data = await res.json().catch(() => ({}));
+                ok = res.ok && data.success !== false;
+                message = data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.');
+            } catch (e) {
+                message = 'An unexpected network error occurred. Please try again.';
+            }
+            showToast(message, ok ? 'success' : 'error');
+            actionBusy = false;
+            disarmScanner(message, ok ? 'success' : 'error');
+        }
+
+        const clientId = (function () {
+            let id = null;
+            try { id = sessionStorage.getItem('gg_client_id'); } catch (e) {}
+            if (!id) {
+                id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+                try { sessionStorage.setItem('gg_client_id', id); } catch (e) {}
+            }
+            return id;
+        })();
+
+        const video = document.getElementById('webcam');
+        const overlay = document.getElementById('overlay');
+        const sampler = document.createElement('canvas');
+        const ANALYZE_INTERVAL_MS = 450;
+        const SAMPLE_WIDTH = 960;
+        const BOX_COLORS = { green: '#22c55e', red: '#e11d48', amber: '#f59e0b' };
+
+        function showCameraError(message) {
+            document.getElementById('status-panel').innerText = message;
+            showToast(message, 'error', 8000);
+        }
+
+        async function startCamera() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showToast('Camera is not available. Open this page over HTTPS in a modern browser.', 'error', 8000);
-                return false;
+                showCameraError('Camera is not available. Open this page over HTTPS in a modern browser.');
+                return;
             }
             try {
-                stream = await navigator.mediaDevices.getUserMedia({
+                const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 }, aspectRatio: { ideal: 16 / 9 } },
                     audio: false
                 });
                 video.srcObject = stream;
                 await video.play();
+
                 try {
                     const track = stream.getVideoTracks()[0];
                     const caps = track.getCapabilities ? track.getCapabilities() : {};
                     if (caps.zoom) await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
                 } catch (e) {}
-                return true;
             } catch (err) {
-                stream = null;
                 if (err && err.name === 'NotAllowedError') {
-                    showToast('Camera permission was denied. Allow camera access and try again.', 'error', 8000);
+                    showCameraError('Camera permission was denied. Allow camera access and reload the page.');
                 } else if (err && err.name === 'NotFoundError') {
-                    showToast('No camera was found on this device.', 'error', 8000);
+                    showCameraError('No camera was found on this device.');
                 } else {
-                    showToast('Could not start the camera: ' + (err && err.message ? err.message : err), 'error', 8000);
+                    showCameraError('Could not start the camera: ' + (err && err.message ? err.message : err));
                 }
-                return false;
             }
-        }
-
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                stream = null;
-            }
-            video.srcObject = null;
-        }
-
-        function clearOverlay() {
-            const ctx = overlay.getContext('2d');
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-        }
-
-        async function startScan(action) {
-            if (recording) return;
-            const switching = mode !== null;
-            mode = action;
-            clearTimeout(armTimer);
-            armTimer = setTimeout(() => {
-                if (mode) {
-                    showToast('Scanner timed out. Press Time In or Time Out to scan again.', 'warning');
-                    stopScan();
-                }
-            }, SCAN_TIMEOUT_MS);
-            updateModeUI();
-            if (switching) {
-                setStatus('Scanning for ' + action + '. Face the camera and hold still.', 'normal');
-                return;
-            }
-
-            setStatus('Starting camera...', 'normal');
-            const ok = await ensureCamera();
-            if (!ok) {
-                stopScan();
-                return;
-            }
-            if (!mode) return;
-            setStatus('Scanning for ' + mode + '. Face the camera and hold still.', 'normal');
-            renderVisitor(null);
-            const token = ++loopToken;
-            analyzeLoop(token);
-        }
-
-        function stopScan() {
-            mode = null;
-            loopToken++;
-            clearTimeout(armTimer);
-            clearOverlay();
-            if (!modalOpen) stopCamera();
-            renderVisitor(null);
-            setStatus(IDLE_TEXT, 'normal');
-            updateModeUI();
         }
 
         function captureFrame() {
@@ -1214,71 +1278,53 @@ HTML_TEMPLATE = """
             return new Promise(resolve => sampler.toBlob(resolve, 'image/jpeg', 0.92));
         }
 
-        async function sendFrame(token) {
-            const action = mode;
-            if (!action) return;
+        async function sendFrame() {
             const blob = await captureFrame();
-            if (!blob || token !== loopToken) return;
+            if (!blob || !scanArmed) return;
 
             const body = new FormData();
             body.append('client_id', clientId);
-            body.append('action', action);
             body.append('frame', blob, 'frame.jpg');
 
             const res = await fetch('/analyze', { method: 'POST', body: body });
-            if (!res.ok || token !== loopToken) return;
+            if (!res.ok || !scanArmed) return;
 
             const data = await res.json();
-            if (token !== loopToken) return;
+            if (!scanArmed) return;
             applyStatus(data);
             drawOverlay(data.boxes || (data.box ? [data.box] : []));
-            await maybeRecord(data.visitor, token);
+
+            const v = data.visitor;
+            if (!actionBusy && v && v.verified && !v.cooling) {
+                const allowed = armedAction === 'Time In' ? v.can_time_in : v.can_time_out;
+                if (allowed) {
+                    recordAttendance(armedAction);
+                } else {
+                    const msg = armedAction === 'Time In' ? v.name + ' is already timed in.' : v.name + ' is not timed in yet.';
+                    showToast(msg, 'warning');
+                    disarmScanner(msg, 'warning');
+                }
+            }
         }
 
-        async function analyzeLoop(token) {
-            while (token === loopToken && mode) {
+        async function analyzeLoop() {
+            if (scanLoopRunning) return;
+            scanLoopRunning = true;
+            while (scanArmed) {
+                if (!registering && Date.now() - armedAt > SCAN_WINDOW_MS) {
+                    const msg = 'Scan timed out. Press Time In or Time Out to try again.';
+                    showToast(msg, 'warning');
+                    disarmScanner(msg, 'warning');
+                    break;
+                }
                 const started = Date.now();
-                try { await sendFrame(token); } catch (e) {}
+                if (!registering && !actionBusy) {
+                    try { await sendFrame(); } catch (e) {}
+                }
                 const wait = Math.max(0, ANALYZE_INTERVAL_MS - (Date.now() - started));
                 await new Promise(resolve => setTimeout(resolve, wait));
             }
-        }
-
-        async function maybeRecord(v, token) {
-            if (!v || !v.verified || v.cooling || recording || !mode || token !== loopToken) return;
-            const action = mode;
-
-            if (action === 'Time In' && v.inside) {
-                showToast(v.name + ' is already timed in.', 'error');
-                stopScan();
-                return;
-            }
-            if (action === 'Time Out' && !v.inside) {
-                showToast(v.name + ' is not timed in yet.', 'error');
-                stopScan();
-                return;
-            }
-
-            recording = true;
-            updateModeUI();
-            await submitAttendance(action);
-            recording = false;
-            stopScan();
-        }
-
-        async function submitAttendance(action) {
-            const body = new FormData();
-            body.append('client_id', clientId);
-            body.append('action', action);
-
-            try {
-                const res = await fetch('/attendance', { method: 'POST', body: body });
-                const data = await res.json().catch(() => ({}));
-                const ok = res.ok && data.success !== false;
-                showToast(data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.'), ok ? 'success' : 'error');
-            } catch (e) {
-                showToast('An unexpected network error occurred. Please try again.', 'error');
-            }
+            scanLoopRunning = false;
         }
 
         function drawOverlay(boxes) {
@@ -1292,81 +1338,40 @@ HTML_TEMPLATE = """
             if (!boxes || !boxes.length || !w || !h || !video.videoWidth) return;
 
             boxes.forEach(function (box) {
-                const vw = video.videoWidth;
-                const vh = video.videoHeight;
-                const scale = Math.min(w / vw, h / vh);
-                const offsetX = (w - vw * scale) / 2;
-                const offsetY = (h - vh * scale) / 2;
-                const x = offsetX + box.x * vw * scale;
-                const y = offsetY + box.y * vh * scale;
-                const bw = box.w * vw * scale;
-                const bh = box.h * vh * scale;
-                const color = BOX_COLORS[box.color] || BOX_COLORS.amber;
-                const len = Math.min(bw, bh) * 0.22;
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            const scale = Math.min(w / vw, h / vh);
+            const offsetX = (w - vw * scale) / 2;
+            const offsetY = (h - vh * scale) / 2;
+            const x = offsetX + box.x * vw * scale;
+            const y = offsetY + box.y * vh * scale;
+            const bw = box.w * vw * scale;
+            const bh = box.h * vh * scale;
+            const color = BOX_COLORS[box.color] || BOX_COLORS.amber;
 
-                ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
-                ctx.strokeStyle = color;
-                ctx.beginPath();
-                ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
-                ctx.moveTo(x + bw - len, y); ctx.lineTo(x + bw, y); ctx.lineTo(x + bw, y + len);
-                ctx.moveTo(x + bw, y + bh - len); ctx.lineTo(x + bw, y + bh); ctx.lineTo(x + bw - len, y + bh);
-                ctx.moveTo(x + len, y + bh); ctx.lineTo(x, y + bh); ctx.lineTo(x, y + bh - len);
-                ctx.stroke();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = color;
+            ctx.strokeRect(x, y, bw, bh);
 
-                if (box.progress !== null && box.progress !== undefined) {
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                    ctx.fillRect(x, y + bh + 8, bw, 6);
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x, y + bh + 8, bw * box.progress, 6);
-                }
+            if (box.progress !== null && box.progress !== undefined) {
+                ctx.fillStyle = 'rgba(40, 40, 40, 0.9)';
+                ctx.fillRect(x, y + bh + 8, bw, 7);
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y + bh + 8, bw * box.progress, 7);
+            }
 
-                if (box.label) {
-                    ctx.font = '700 13px sans-serif';
-                    ctx.fillStyle = color;
-                    ctx.fillText(box.label, x, Math.max(18, y - 10));
-                }
+            if (box.label) {
+                ctx.font = '600 13px sans-serif';
+                ctx.fillStyle = color;
+                ctx.fillText(box.label, x, Math.max(18, y - 8));
+            }
             });
         }
 
-        function handleUserTypeChange(type) {
-            const groups = {
-                Student: document.getElementById('group-student'),
-                Parent: document.getElementById('group-parent'),
-                Faculty: document.getElementById('group-faculty'),
-                Others: document.getElementById('group-others')
-            };
-            const mnameInput = document.getElementById('field_mname');
-            const mnameLabel = document.getElementById('label_mname');
-            const hintText = document.getElementById('user_type_hint');
-            const requiredByType = {
-                Student: ['field_student_id', 'field_college', 'field_course', 'field_year'],
-                Parent: ['field_parent_address'],
-                Faculty: ['field_faculty_college', 'field_department'],
-                Others: ['field_other_address']
-            };
-            const hints = {
-                Student: 'Student registration requiring Student ID, College, Year Level, and Course.',
-                Parent: 'Parent registration: requires Surname, First Name, Middle Name, and Address. Suffix is optional.',
-                Faculty: 'Faculty registration: requires Name fields, your College, and the Department you teach in.',
-                Others: 'Visitor / Guest registration: requires Name fields and Address/Purpose of visit.'
-            };
+        startCamera();
 
-            Object.keys(groups).forEach(key => groups[key].classList.add('hidden'));
-            Object.values(requiredByType).flat().forEach(id => { document.getElementById(id).required = false; });
-
-            mnameInput.required = false;
-            mnameLabel.innerHTML = 'Middle Name <span class="text-slate-400 font-normal">(Optional)</span>';
-
-            if (!groups[type]) return;
-            groups[type].classList.remove('hidden');
-            requiredByType[type].forEach(id => { document.getElementById(id).required = true; });
-            if (type === 'Parent') {
-                mnameInput.required = true;
-                mnameLabel.innerHTML = 'Middle Name <span class="text-rose-600">*</span>';
-            }
-            hintText.innerText = hints[type];
-        }
+        const regVideo = document.getElementById('reg-video');
+        const regPreview = document.getElementById('reg-preview');
 
         function setSubmitEnabled() {
             document.getElementById('submit-btn').disabled = !capturedBlob;
@@ -1439,37 +1444,31 @@ HTML_TEMPLATE = """
             resetCapture();
         }
 
-        async function openModal() {
-            modalOpen = true;
-            if (mode) stopScan();
-            const ok = await ensureCamera();
-            if (!ok) {
-                modalOpen = false;
-                return;
-            }
+        function openModal() {
+            registering = true;
             document.getElementById('cancel-confirm-box').classList.add('hidden');
-            regVideo.srcObject = stream;
+            regVideo.srcObject = video.srcObject;
             regVideo.play().catch(() => {});
             resetCapture();
             document.getElementById('reg-modal').classList.remove('hidden');
         }
 
         function hideModal() {
+            registering = false;
+            armedAt = Date.now();
             document.getElementById('reg-modal').classList.add('hidden');
             document.getElementById('reg-form').reset();
             handleUserTypeChange('Student');
             regVideo.srcObject = null;
             resetCapture();
-            modalOpen = false;
-            if (!mode) stopCamera();
         }
-
-        function closeModal() {
+        
+        function closeModal() { 
             const form = document.getElementById('reg-form');
-            const hasData = capturedBlob !== null || Array.from(form.elements).some(input =>
+            const hasData = capturedBlob !== null || Array.from(form.elements).some(input => 
                 (input.type === 'text' || input.type === 'number') && input.value.trim() !== ''
             );
-
+            
             if (hasData) {
                 document.getElementById('cancel-confirm-box').classList.remove('hidden');
             } else {
@@ -1479,7 +1478,9 @@ HTML_TEMPLATE = """
 
         function dismissConfirmClose(confirmCancel) {
             document.getElementById('cancel-confirm-box').classList.add('hidden');
-            if (confirmCancel) hideModal();
+            if (confirmCancel) {
+                hideModal();
+            }
         }
 
         function submitRegistration(event) {
@@ -1494,11 +1495,14 @@ HTML_TEMPLATE = """
             formData.append('frame', capturedBlob, 'face.jpg');
             const btn = document.getElementById('submit-btn');
             const originalBtnHtml = btn.innerHTML;
-
-            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving & Training Face...';
+            
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving & Training Face...`;
             btn.disabled = true;
 
-            fetch('/register', { method: 'POST', body: formData })
+            fetch('/register', { 
+                method: 'POST', 
+                body: formData 
+            })
             .then(res => res.json().then(data => ({ status: res.status, data })))
             .then(({ status, data }) => {
                 if (status >= 200 && status < 300 && data.success !== false) {
@@ -1516,8 +1520,6 @@ HTML_TEMPLATE = """
                 setSubmitEnabled();
             });
         }
-
-        updateModeUI();
     </script>
 </body>
 </html>
@@ -1533,25 +1535,26 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GuardGate</title>
+    <title>GuardGate Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body {height: 100%; margin: 0;}
-        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: radial-gradient(60rem 40rem at 90% -10%, rgba(16,185,129,.18), transparent 60%), radial-gradient(50rem 40rem at -10% 110%, rgba(20,184,166,.12), transparent 60%), #05100c;}
+        html, body {height: 100%; width: 100%; margin: 0; overflow: hidden;}
+        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%);}
+        .app-root {height: 100vh; height: 100dvh; width: 100vw; overflow: hidden;}
     </style>
 </head>
-<body class="text-slate-100 antialiased">
-    <div class="min-h-full flex items-center justify-center p-4">
-        <div class="w-full max-w-sm rounded-3xl p-7 sm:p-9 text-center border border-white/10 bg-white/5 backdrop-blur">
-            <div class="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-emerald-950 flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-5">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+<body class="text-slate-800 antialiased overflow-hidden">
+    <div class="app-root flex items-center justify-center p-4">
+        <div class="w-full max-w-sm max-h-full overflow-y-auto bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 p-6 sm:p-8 text-center">
+            <div class="mx-auto w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-800/15 mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
             </div>
-            <h1 class="text-2xl font-extrabold tracking-tight">GuardGate</h1>
-            <p class="text-xs text-slate-400 font-medium mt-1 mb-7">Select how you want to continue</p>
+            <h1 class="text-2xl font-bold text-emerald-950 tracking-tight">GuardGate</h1>
+            <p class="text-xs text-emerald-900/60 font-medium mt-1 mb-6">Select how you want to continue</p>
             <div class="flex flex-col gap-3">
-                <a href="{{ url_for('scanner') }}" class="block bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-extrabold py-3.5 px-6 rounded-2xl transition-colors">Student / Visitor</a>
-                <a href="{{ url_for('guard_login') }}" class="block bg-white/5 hover:bg-white/10 text-white text-sm font-bold py-3.5 px-6 rounded-2xl border border-white/15 transition-colors">Guard</a>
+                <a href="{{ url_for('scanner') }}" class="block bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold py-3 px-6 rounded-xl shadow-sm transition-colors">Student</a>
+                <a href="{{ url_for('guard_login') }}" class="block bg-white hover:bg-emerald-50 text-emerald-900 text-sm font-semibold py-3 px-6 rounded-xl border border-emerald-200 shadow-sm transition-colors">Guard</a>
             </div>
         </div>
     </div>
@@ -1573,29 +1576,30 @@ GUARD_LOGIN_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guard Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body {height: 100%; margin: 0;}
-        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: radial-gradient(60rem 40rem at 90% -10%, rgba(16,185,129,.18), transparent 60%), radial-gradient(50rem 40rem at -10% 110%, rgba(20,184,166,.12), transparent 60%), #05100c;}
+        html, body {height: 100%; width: 100%; margin: 0; overflow: hidden;}
+        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%);}
+        .app-root {height: 100vh; height: 100dvh; width: 100vw; overflow: hidden;}
     </style>
 </head>
-<body class="text-slate-100 antialiased">
-    <div class="min-h-full flex items-center justify-center p-4">
-        <div class="w-full max-w-sm rounded-3xl p-7 sm:p-9 border border-white/10 bg-white/5 backdrop-blur">
-            <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200 bg-emerald-400/10 border border-emerald-400/25 px-3 py-1.5 rounded-lg transition-colors mb-6"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
-            <h2 class="text-2xl font-extrabold tracking-tight">Guard Login</h2>
-            <p class="text-xs text-slate-400 font-medium mt-1 mb-6">Sign in to open the admin station</p>
-            {% if error %}<p class="mb-4 rounded-xl bg-rose-500/15 border border-rose-400/30 text-rose-200 text-xs font-medium px-3 py-2">{{ error }}</p>{% endif %}
+<body class="text-slate-800 antialiased overflow-hidden">
+    <div class="app-root flex items-center justify-center p-4">
+        <div class="w-full max-w-sm max-h-full overflow-y-auto bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 p-6 sm:p-8">
+            <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors mb-5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
+            <h2 class="text-2xl font-bold text-emerald-950 tracking-tight">Guard Login</h2>
+            <p class="text-xs text-emerald-900/60 font-medium mt-1 mb-6">Sign in to open the admin station</p>
+            {% if error %}<p class="mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium px-3 py-2">{{ error }}</p>{% endif %}
             <form method="POST" action="{{ url_for('guard_login') }}" class="space-y-4">
                 <div>
-                    <label for="username" class="block text-xs font-semibold text-slate-300 mb-1.5">Username</label>
-                    <input id="username" type="text" name="username" required class="w-full bg-white/5 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none transition focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400"/>
+                    <label for="username" class="block text-xs font-semibold text-slate-700 mb-1.5">Username</label>
+                    <input id="username" type="text" name="username" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"/>
                 </div>
                 <div>
-                    <label for="password" class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
-                    <input id="password" type="password" name="password" required class="w-full bg-white/5 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none transition focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400"/>
+                    <label for="password" class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+                    <input id="password" type="password" name="password" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"/>
                 </div>
-                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-extrabold py-3 rounded-xl transition-colors">Login</button>
+                <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold py-2.5 rounded-xl shadow-sm transition-colors">Login</button>
             </form>
         </div>
     </div>
@@ -1695,11 +1699,8 @@ def attendance():
 def analyze():
     client_id = request.form.get('client_id', '').strip()[:64]
     upload = request.files.get('frame')
-    action = request.form.get('action', '').strip()
     if not client_id or upload is None:
         return jsonify({"error": "Missing frame or client id."}), 400
-    if action not in ('Time In', 'Time Out'):
-        return jsonify({"error": "Scanner is off. Choose Time In or Time Out first."}), 403
 
     frame = cv2.imdecode(np.frombuffer(upload.read(), np.uint8), cv2.IMREAD_COLOR)
     if frame is None:
@@ -1709,11 +1710,6 @@ def analyze():
 
     try:
         state = get_client_state(client_id)
-        now = time.time()
-        if now - state["last_analyze"] > 3:
-            reset_verification(state)
-            state["system_status"]["unknown_detected"] = False
-        state["last_analyze"] = now
         return jsonify(analyze_frame(frame, state))
     except Exception as e:
         logging.error(f"Frame analysis error: {e}")

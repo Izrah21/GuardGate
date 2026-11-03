@@ -18873,3 +18873,139 @@
  * Running on http://10.10.28.130:5000
 2026-11-03 14:48:16,299 - INFO - Press CTRL+C to quit
 2026-11-03 14:48:16,303 - INFO -  * Restarting with stat
+2026-11-03 15:49:12,515 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 15:49:12,521 - INFO - Press CTRL+C to quit
+2026-11-03 15:49:12,527 - INFO -  * Restarting with stat
+2026-11-03 15:49:16,895 - WARNING -  * Debugger is active!
+2026-11-03 15:49:16,899 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 15:49:36,004 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:36] "GET / HTTP/1.1" 302 -
+2026-11-03 15:49:36,041 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:36] "GET /login HTTP/1.1" 200 -
+2026-11-03 15:49:37,562 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:37] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-03 15:49:39,913 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:39] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 15:49:43,107 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:43] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:43,192 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:43] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:43,631 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:43] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:44,407 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:44] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:44,863 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:44] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:45,563 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:45] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:46,014 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:46] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:46,463 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:46] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:46,913 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:46] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:47,364 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:47] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:48,187 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:48] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:48,280 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:48] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:49:51,163 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:51] "GET /guard_login HTTP/1.1" 200 -
+2026-11-03 15:49:54,515 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:54] "POST /guard_login HTTP/1.1" 302 -
+2026-11-03 15:49:54,531 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:54] "GET /guard HTTP/1.1" 200 -
+2026-11-03 15:49:55,504 - INFO - 127.0.0.1 - - [03/Nov/2026 15:49:55] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:50:05,459 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:05] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:50:15,439 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:15] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:50:25,514 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:25] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:50:35,508 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:35] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:50:44,541 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:44] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-03 15:50:45,468 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:45] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:50:55,500 - INFO - 127.0.0.1 - - [03/Nov/2026 15:50:55] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:51:05,477 - INFO - 127.0.0.1 - - [03/Nov/2026 15:51:05] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:51:15,478 - INFO - 127.0.0.1 - - [03/Nov/2026 15:51:15] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:51:25,466 - INFO - 127.0.0.1 - - [03/Nov/2026 15:51:25] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:51:35,600 - INFO - 127.0.0.1 - - [03/Nov/2026 15:51:35] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:51:45,526 - INFO - 127.0.0.1 - - [03/Nov/2026 15:51:45] "GET /api/guard/dashboard HTTP/1.1" 200 -
+2026-11-03 15:51:49,534 - INFO -  * Detected change in 'c:\\Users\\user\\Desktop\\Soft Eng\\GUARDGATE2\\guard.py', reloading
+2026-11-03 15:51:50,754 - INFO -  * Restarting with stat
+2026-11-03 15:52:12,001 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 15:52:12,001 - INFO - Press CTRL+C to quit
+2026-11-03 15:52:12,005 - INFO -  * Restarting with stat
+2026-11-03 15:52:15,832 - WARNING -  * Debugger is active!
+2026-11-03 15:52:15,836 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 15:52:15,922 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:15] "GET /api/guard/dashboard HTTP/1.1" 404 -
+2026-11-03 15:52:16,864 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:16] "GET /guard HTTP/1.1" 200 -
+2026-11-03 15:52:17,626 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:17] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-03 15:52:18,057 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:18] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 15:52:18,658 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:18] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:18,677 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:18] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-03 15:52:20,556 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:20] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:24,152 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:24,490 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:24] "GET /api/students/summary?student_id=24-1423124 HTTP/1.1" 200 -
+2026-11-03 15:52:26,856 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:26] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:27,203 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:27] "GET /api/students/summary?student_id=24-140055 HTTP/1.1" 200 -
+2026-11-03 15:52:29,548 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:29] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:32,544 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:32] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:32,939 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:32] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-03 15:52:35,592 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:35] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 15:52:35,645 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:35] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 15:52:39,459 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:39] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:40,031 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:40] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:40,469 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:40] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:41,118 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:41] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:41,752 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:41] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:42,375 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:42] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:42,966 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:42] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:43,400 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:43] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:43,852 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:43] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:44,777 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:44] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:45,397 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:45] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:45,812 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:45] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:46,352 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:46] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:46,761 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:46] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:49,210 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:49] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:50,006 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:50] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:50,140 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:50] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:50,670 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:50] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:51,623 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:51] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:52,090 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:52] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:52,530 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:52] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:53,005 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:53] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:53,470 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:53] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:53,924 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:53] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:54,384 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:54] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:55,187 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:55] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:55,306 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:55] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:55,751 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:55] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:56,236 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:56] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:56,677 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:56] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:57,194 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:57] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:58,160 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:58] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:58,600 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:58] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:59,117 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:59] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:52:59,574 - INFO - 127.0.0.1 - - [03/Nov/2026 15:52:59] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:00,481 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:00] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:00,653 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:00] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:01,082 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:01] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:01,617 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:01] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:02,564 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:02] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:03,208 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:03] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:03,663 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:03] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:04,172 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:04] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:04,625 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:04] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:05,582 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:05] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:05,693 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:05] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:06,128 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:06] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:06,668 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:06] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:07,642 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:07] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:08,109 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:08] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:08,701 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:08] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:09,185 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:09,659 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:11,090 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:11] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:13,104 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:13] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:13,550 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:13] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:14,070 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:14,527 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:14,985 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:53:15,423 - INFO - 127.0.0.1 - - [03/Nov/2026 15:53:15] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 15:54:15,748 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 15:54:15,750 - INFO - Press CTRL+C to quit
+2026-11-03 15:54:15,755 - INFO -  * Restarting with stat
+2026-11-03 15:54:19,443 - WARNING -  * Debugger is active!
+2026-11-03 15:54:19,446 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 15:54:23,986 - INFO - 127.0.0.1 - - [03/Nov/2026 15:54:23] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 15:54:24,769 - INFO - 127.0.0.1 - - [03/Nov/2026 15:54:24] "GET /favicon.ico HTTP/1.1" 404 -
