@@ -13,9 +13,6 @@ from datetime import datetime, timezone, timedelta
 from admin import admin_bp
 from guard import guard_bp
 
-from flask import Blueprint
-guard_bp = Blueprint('guard', __name__)
-
 SUPABASE_URL = "https://qciehqzajzaejhsjzrdm.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjaWVocXphanphZWpoc2p6cmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODQwNDksImV4cCI6MjEwNDY2MDA0OX0.0An1BSRjssOI7SliI1lC3jkMo14XVHbUnfXFt015Uyo"
 
@@ -25,6 +22,7 @@ app = Flask(__name__)
 app.secret_key = 'super-secret-key-please-change'
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 
+# I-register ang guard_bp para ma-call ang guard.py sa port 5000
 app.register_blueprint(guard_bp)
 app.register_blueprint(admin_bp)
 
@@ -48,17 +46,20 @@ last_sync_check = 0.0
 SYNC_INTERVAL = 5
 sync_lock = threading.Lock()
 
+# Timer delay configuration (2.5 seconds hold before triggering Time In/Out)
 VERIFICATION_DELAY = 0.5
 COOLDOWN_SECONDS = 3
 ATTENDANCE_GRACE = 2.0
 FACE_LOST_RESET = 1.5
 
-MATCH_THRESHOLD = 42
-MATCH_MARGIN = 10
-DEBUG_CONFIDENCE = True
+# Recognition tuning. LBPH returns a distance: LOWER = better match.
+# The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
+MATCH_THRESHOLD = 42       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
+DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
 FACE_SIZE = 200
-MIN_FACE_RATIO = 0.15
-MAX_FACES_PER_FRAME = 1
+MIN_FACE_RATIO = 0.15      # smallest accepted face, as a fraction of frame width
+MAX_FACES_PER_FRAME = 1    # evaluate up to this many faces per frame (largest first)
 CLIENT_TTL = 600
 DEFAULT_STATUS_TEXT = "System Active: Scanning for registered visitors..."
 PRESENCE_TTL = 15
@@ -71,7 +72,7 @@ def new_client_state():
     return {
         "cooldown_timer": 0,
         "cooldowns": {},
-        "verifying": {},
+        "verifying": {},          # visitor_id -> time their hold-still timer started
         "last_face_seen_time": 0,
         "last_active": time.time(),
         "current": {"visitor": None, "verified": False, "seen": 0},
@@ -104,7 +105,10 @@ if not os.path.exists(cascade_path):
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
 
+# --- app.py (Line 104) ---
+
 def detect_faces(gray, relaxed=False):
+    """Detect faces on a grayscale frame. Returns boxes sorted largest first."""
     frame_w = gray.shape[1]
     min_side = max(30 if relaxed else 48, int(frame_w * (0.04 if relaxed else MIN_FACE_RATIO)))
     equalized = cv2.equalizeHist(gray)
@@ -112,7 +116,7 @@ def detect_faces(gray, relaxed=False):
         faces = face_cascade.detectMultiScale(
             equalized,
             scaleFactor=1.05 if relaxed else 1.08,
-            minNeighbors=4 if relaxed else 8,
+            minNeighbors=4 if relaxed else 8,  # Increased from 6 to 8 for tighter filtering
             minSize=(min_side, min_side),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
@@ -124,8 +128,9 @@ def detect_faces(gray, relaxed=False):
 def face_from_gray(gray, box):
     x, y, w, h = box
 
-    trim_x = int(w * 0.12)
-    trim_y_top = int(h * 0.15)
+    # Relaxed trimming so distinct features aren't lost
+    trim_x = int(w * 0.12)      # Was 0.18
+    trim_y_top = int(h * 0.15)  # Was 0.22
     trim_y_bot = int(h * 0.10)
     
     roi = gray[max(0, y + trim_y_top):y + h - trim_y_bot, max(0, x + trim_x):x + w - trim_x]
@@ -133,21 +138,26 @@ def face_from_gray(gray, box):
         roi = gray[y:y + h, x:x + w]
         
     roi = cv2.resize(roi, (FACE_SIZE, FACE_SIZE), interpolation=cv2.INTER_AREA)
+    # Stronger CLAHE grid to flatten harsh room lighting differences
     return cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(roi)
 
 
 def augment_face(face):
+    """Generates robust variations (flips, shifts, lighting) to fix 1-shot learning weakness."""
     samples = [face]
     h, w = face.shape
     
+    # Brightness variations
     samples.append(cv2.convertScaleAbs(face, alpha=1.05, beta=10))
     samples.append(cv2.convertScaleAbs(face, alpha=0.95, beta=-10))
     
+    # Spatial Jitter (accounts for bounding box bouncing in live video)
     for dx in (-6, 6):
         for dy in (-6, 6):
             m = np.float32([[1, 0, dx], [0, 1, dy]])
             samples.append(cv2.warpAffine(face, m, (w, h), borderMode=cv2.BORDER_REPLICATE))
     
+    # Mirror images for symmetrical posing
     flipped = cv2.flip(face, 1)
     samples.append(flipped)
     for dx in (-4, 4):
@@ -158,6 +168,7 @@ def augment_face(face):
 
 
 def extract_training_face(gray, label):
+    """Registration stores the whole camera frame, so find and crop the face before training."""
     boxes = detect_faces(gray) or detect_faces(gray, relaxed=True)
     if boxes:
         return face_from_gray(gray, boxes[0])
@@ -300,6 +311,7 @@ load_recognizer_training()
 
 
 def identify_face(face_roi):
+    """Return (visitor or None, best_distance). Call while holding cv_lock."""
     ranked = None
     try:
         collector = cv2.face.StandardCollector_create()
@@ -624,6 +636,7 @@ HTML_TEMPLATE = """
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Lock the page to the viewport: no root or body scrolling */
         html, body {
             height: 100%;
             width: 100%;
@@ -640,15 +653,16 @@ HTML_TEMPLATE = """
             width: 100vw;
             overflow: hidden;
         }
-            .scan-active { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.45) !important; }
     </style>
 </head>
 <body class="text-slate-800 antialiased overflow-hidden">
 
+    <!-- FLOATING TOAST NOTIFICATION CONTAINER (Eliminates 'localhost says' alerts) -->
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
     <div class="app-root flex flex-col">
 
+        <!-- HEADER -->
         <header class="shrink-0 px-4 sm:px-8 py-3 border-b border-emerald-900/10 bg-white/60 backdrop-blur flex items-center">
             <div class="flex items-center gap-3 min-w-0">
                 <div class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-800/15 shrink-0">
@@ -663,9 +677,11 @@ HTML_TEMPLATE = """
             </div>
         </header>
 
+        <!-- MAIN SCANNER CONTAINER -->
         <main class="flex-1 min-h-0 p-3 sm:p-5">
             <div class="h-full w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 overflow-hidden">
 
+                <!-- LEFT: INFORMATION AND CREDENTIALS -->
                 <section class="order-2 md:order-1 flex-1 min-w-0 min-h-0 flex flex-col">
                     <div class="shrink-0 px-4 sm:px-5 py-3 border-b border-emerald-900/5 bg-emerald-50/40 flex justify-between items-center gap-2">
                         <span class="text-xs font-semibold uppercase tracking-wider text-emerald-900 flex items-center gap-2 min-w-0">
@@ -679,7 +695,7 @@ HTML_TEMPLATE = """
 
                     <div class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
                         <div id="status-panel" class="rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-4 py-3 text-center text-sm font-medium text-emerald-800 transition-colors duration-300">
-                            Scanner locked. Press Time In or Time Out to begin.
+                            System Active: Scanning for registered visitors...
                         </div>
 
                         <div class="rounded-xl border border-emerald-900/10 overflow-hidden">
@@ -718,8 +734,12 @@ HTML_TEMPLATE = """
 
                     <div class="shrink-0 p-4 sm:p-5 border-t border-emerald-900/10 bg-white">
                         <div class="grid grid-cols-2 gap-3">
-                            <button id="time-in-btn" type="button" onclick="armScanner('Time In')" class="py-3 px-4 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"><span>Time In</span></button>
-                            <button id="time-out-btn" type="button" onclick="armScanner('Time Out')" class="py-3 px-4 text-sm font-semibold text-rose-700 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"><span>Time Out</span></button>
+                            <button id="time-in-btn" type="button" onclick="recordAttendance('Time In')" disabled class="py-3 px-4 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
+                                Time In
+                            </button>
+                            <button id="time-out-btn" type="button" onclick="recordAttendance('Time Out')" disabled class="py-3 px-4 text-sm font-semibold text-rose-700 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
+                                Time Out
+                            </button>
                         </div>
                         <button id="register-btn" type="button" onclick="openModal()" class="hidden mt-3 w-full py-2.5 px-4 text-sm font-semibold text-emerald-800 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition shadow-sm flex items-center justify-center gap-2">
                             <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
@@ -728,6 +748,7 @@ HTML_TEMPLATE = """
                     </div>
                 </section>
 
+                <!-- RIGHT: SMALL CAMERA FEED -->
                 <aside class="order-1 md:order-2 shrink-0 w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-l border-emerald-900/10 bg-slate-50/60 p-3 md:p-4 flex flex-col min-h-0">
                     <div class="mb-2 md:mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-900">
                         <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -738,12 +759,6 @@ HTML_TEMPLATE = """
                         <video id="webcam" autoplay playsinline muted class="object-contain h-full w-full opacity-95 -scale-x-100"></video>
                         <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
 
-                        <div id="lock-container" class="absolute inset-0 p-3 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-2">
-                            <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                            <p class="text-xs font-semibold text-slate-200">Scanner Locked</p>
-                            <p class="text-[11px] text-slate-400">Press Time In or Time Out to start scanning.</p>
-                        </div>
-
                         <div id="standby-container" class="hidden absolute inset-0 p-3 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-2">
                             <svg class="w-6 h-6 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             <p class="text-xs font-semibold text-slate-200">Scanner on Standby</p>
@@ -752,9 +767,9 @@ HTML_TEMPLATE = """
                     </div>
 
                     <ol class="hidden md:block mt-4 space-y-2 text-xs text-slate-600 leading-relaxed overflow-y-auto min-h-0">
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">1</span>Press Time In to enter or Time Out to leave. The scanner stays locked until you do.</li>
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">2</span>Face the camera and hold still until you are verified.</li>
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">3</span>Your attendance is recorded automatically once you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">1</span>Face the camera and hold still until you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">2</span>Check your credentials on the left.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">3</span>Press Time In to enter or Time Out to leave.</li>
                         <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] font-bold flex items-center justify-center">?</span>Not recognized? Use Register New Visitor.</li>
                     </ol>
                 </aside>
@@ -762,9 +777,11 @@ HTML_TEMPLATE = """
         </main>
     </div>
 
+    <!-- REGISTRATION MODAL -->
     <div id="reg-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 transition-opacity duration-300 overflow-hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden border border-emerald-900/15 relative">
             
+            <!-- MODAL HEADER -->
             <div class="shrink-0 px-6 py-4 border-b border-emerald-900/10 flex justify-between items-center bg-emerald-50/60">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center">
@@ -780,10 +797,12 @@ HTML_TEMPLATE = """
                 </button>
             </div>
             
+            <!-- REGISTRATION FORM -->
             <form id="reg-form" onsubmit="submitRegistration(event)" class="p-4 sm:p-6 overflow-y-auto min-h-0 flex-1">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <div class="md:col-span-3 min-w-0">
                 
+                <!-- USER TYPE SELECTOR (FIRST SELECTION) -->
                 <div class="mb-6 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
                     <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-1.5 flex items-center gap-1.5">
    <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -798,6 +817,7 @@ HTML_TEMPLATE = """
                     <p id="user_type_hint" class="text-[11px] text-emerald-800/80 mt-1.5 font-medium">Standard student registration requiring Student ID and College.</p>
                 </div>
 
+                <!-- NAME FIELDS (COMMON TO ALL) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
@@ -823,6 +843,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                <!-- STUDENT SECTION: COLLEGE DROPDOWN, STUDENT ID, YEAR LEVEL (1-4), COURSE / PROGRAM -->
                 <div id="group-student" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
    <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
@@ -860,6 +881,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                <!-- PARENT SECTION: same grid as Student, no ID and no college (suffix is in the shared name fields) -->
                 <div id="group-parent" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
    <label class="block text-xs font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
@@ -867,6 +889,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                <!-- FACULTY SECTION: same grid as Student, no ID; College + Department -->
                 <div id="group-faculty" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
    <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
@@ -890,6 +913,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                <!-- OTHERS SECTION: NAME FIELDS + ADDRESS/PURPOSE -->
                 <div id="group-others" class="hidden mt-4 pt-4 border-t border-slate-100">
                     <div class="space-y-1.5">
    <label class="block text-xs font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
@@ -899,6 +923,7 @@ HTML_TEMPLATE = """
 
                 </div>
 
+                <!-- FACE CAPTURE -->
                 <div class="md:col-span-2 min-w-0">
                     <div class="md:sticky md:top-0 rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4">
                         <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-2">
@@ -921,6 +946,7 @@ HTML_TEMPLATE = """
                 </div>
                 </div>
 
+                <!-- IN-MODAL CONFIRMATION DIALOG (Avoids browser confirm()) -->
                 <div id="cancel-confirm-box" class="hidden mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
                     <div class="flex items-start gap-3">
    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -939,6 +965,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                <!-- FORM BUTTONS -->
                 <div class="sticky bottom-0 z-10 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 mt-6 px-4 sm:px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3">
                     <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
    Cancel
@@ -952,17 +979,11 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
         let lastFaceTime = Date.now();
         let isCameraHidden = false;
         let actionBusy = false;
-        let scanArmed = false;
-        let armedAction = null;
-        let armedAt = 0;
-        let registering = false;
-        let scanLoopRunning = false;
-        const SCAN_WINDOW_MS = 30000;
-        const LOCKED_TEXT = 'Scanner locked. Press Time In or Time Out to begin.';
         let capturedBlob = null;
         let capturedUrl = null;
 
@@ -1009,6 +1030,7 @@ HTML_TEMPLATE = """
             }, duration);
         }
 
+        // Dynamic User Type Form Adjustment
         function handleUserTypeChange(type) {
             const studentGroup = document.getElementById('group-student');
             const parentGroup = document.getElementById('group-parent');
@@ -1019,11 +1041,13 @@ HTML_TEMPLATE = """
             const mnameLabel = document.getElementById('label_mname');
             const hintText = document.getElementById('user_type_hint');
 
+            // Hide all specialized field groups
             studentGroup.classList.add('hidden');
             parentGroup.classList.add('hidden');
             facultyGroup.classList.add('hidden');
             othersGroup.classList.add('hidden');
 
+            // Reset required flags on dynamic inputs
             document.getElementById('field_student_id').required = false;
             document.getElementById('field_college').required = false;
             document.getElementById('field_course').required = false;
@@ -1072,6 +1096,8 @@ HTML_TEMPLATE = """
         function renderVisitor(v) {
             const avatar = document.getElementById('v-avatar');
             const presence = document.getElementById('v-presence');
+            const inBtn = document.getElementById('time-in-btn');
+            const outBtn = document.getElementById('time-out-btn');
             const avatarBase = 'w-14 h-14 shrink-0 rounded-2xl text-white flex items-center justify-center text-lg font-bold ';
 
             if (!v) {
@@ -1082,6 +1108,8 @@ HTML_TEMPLATE = """
                 presence.classList.add('hidden');
                 ['v-category', 'v-college', 'v-detail', 'v-last-action', 'v-last-time'].forEach(id => setText(id, '-'));
                 setText('v-detail-label', 'Course / Dept / Address');
+                inBtn.disabled = true;
+                outBtn.disabled = true;
                 return;
             }
 
@@ -1099,9 +1127,11 @@ HTML_TEMPLATE = """
             setText('v-detail', v.detail);
             setText('v-last-action', v.last_action || 'No record yet');
             setText('v-last-time', v.last_timestamp || '-');
+            inBtn.disabled = actionBusy || !v.can_time_in;
+            outBtn.disabled = actionBusy || !v.can_time_out;
         }
 
-        function paintStatus(data) {
+        function applyStatus(data) {
             const panel = document.getElementById('status-panel');
             panel.innerText = data.text;
             
@@ -1117,11 +1147,7 @@ HTML_TEMPLATE = """
             }
             
             panel.className = `rounded-xl border px-4 py-3 text-center text-sm font-medium transition-colors duration-300 ${bgClass} ${textClass} ${borderClass}`;
-        }
-
-        function applyStatus(data) {
-            paintStatus(data);
-
+            
             const regBtn = document.getElementById('register-btn');
             if (data.unknown_detected) {
                 regBtn.classList.remove('hidden');
@@ -1148,68 +1174,26 @@ HTML_TEMPLATE = """
             }
         }
 
-        function syncControls() {
-            [['Time In', 'time-in-btn'], ['Time Out', 'time-out-btn']].forEach(function (pair) {
-                const btn = document.getElementById(pair[1]);
-                const active = scanArmed && armedAction === pair[0];
-                btn.disabled = actionBusy;
-                btn.classList.toggle('scan-active', active);
-                btn.querySelector('span').innerText = active ? 'Scanning... tap to cancel' : pair[0];
-            });
-        }
-
-        function armScanner(action) {
-            if (actionBusy) return;
-            if (scanArmed && armedAction === action) {
-                disarmScanner();
-                return;
-            }
-            armedAction = action;
-            scanArmed = true;
-            armedAt = Date.now();
-            lastFaceTime = Date.now();
-            isCameraHidden = false;
-            document.getElementById('lock-container').classList.add('hidden');
-            document.getElementById('standby-container').classList.add('hidden');
-            renderVisitor(null);
-            paintStatus({ text: 'Scanner unlocked for ' + action + '. Face the camera.', status: 'verifying' });
-            syncControls();
-            analyzeLoop();
-        }
-
-        function disarmScanner(text, status) {
-            scanArmed = false;
-            armedAction = null;
-            const ctx = overlay.getContext('2d');
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-            document.getElementById('standby-container').classList.add('hidden');
-            document.getElementById('lock-container').classList.remove('hidden');
-            paintStatus({ text: text || LOCKED_TEXT, status: status || 'normal' });
-            syncControls();
-        }
-
         async function recordAttendance(action) {
             if (actionBusy) return;
             actionBusy = true;
-            syncControls();
+            document.getElementById('time-in-btn').disabled = true;
+            document.getElementById('time-out-btn').disabled = true;
 
             const body = new FormData();
             body.append('client_id', clientId);
             body.append('action', action);
 
-            let ok = false;
-            let message = '';
             try {
                 const res = await fetch('/attendance', { method: 'POST', body: body });
                 const data = await res.json().catch(() => ({}));
-                ok = res.ok && data.success !== false;
-                message = data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.');
+                const ok = res.ok && data.success !== false;
+                showToast(data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.'), ok ? 'success' : 'error');
             } catch (e) {
-                message = 'An unexpected network error occurred. Please try again.';
+                showToast('An unexpected network error occurred. Please try again.', 'error');
+            } finally {
+                actionBusy = false;
             }
-            showToast(message, ok ? 'success' : 'error');
-            actionBusy = false;
-            disarmScanner(message, ok ? 'success' : 'error');
         }
 
         const clientId = (function () {
@@ -1247,11 +1231,13 @@ HTML_TEMPLATE = """
                 video.srcObject = stream;
                 await video.play();
 
+                // Some webcams start digitally zoomed in; drop to the widest field of view they allow
                 try {
                     const track = stream.getVideoTracks()[0];
                     const caps = track.getCapabilities ? track.getCapabilities() : {};
                     if (caps.zoom) await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
                 } catch (e) {}
+                analyzeLoop();
             } catch (err) {
                 if (err && err.name === 'NotAllowedError') {
                     showCameraError('Camera permission was denied. Allow camera access and reload the page.');
@@ -1284,51 +1270,27 @@ HTML_TEMPLATE = """
 
         async function sendFrame() {
             const blob = await captureFrame();
-            if (!blob || !scanArmed) return;
+            if (!blob) return;
 
             const body = new FormData();
             body.append('client_id', clientId);
             body.append('frame', blob, 'frame.jpg');
 
             const res = await fetch('/analyze', { method: 'POST', body: body });
-            if (!res.ok || !scanArmed) return;
+            if (!res.ok) return;
 
             const data = await res.json();
-            if (!scanArmed) return;
             applyStatus(data);
             drawOverlay(data.boxes || (data.box ? [data.box] : []));
-
-            const v = data.visitor;
-            if (!actionBusy && v && v.verified && !v.cooling) {
-                const allowed = armedAction === 'Time In' ? v.can_time_in : v.can_time_out;
-                if (allowed) {
-                    recordAttendance(armedAction);
-                } else {
-                    const msg = armedAction === 'Time In' ? v.name + ' is already timed in.' : v.name + ' is not timed in yet.';
-                    showToast(msg, 'warning');
-                    disarmScanner(msg, 'warning');
-                }
-            }
         }
 
         async function analyzeLoop() {
-            if (scanLoopRunning) return;
-            scanLoopRunning = true;
-            while (scanArmed) {
-                if (!registering && Date.now() - armedAt > SCAN_WINDOW_MS) {
-                    const msg = 'Scan timed out. Press Time In or Time Out to try again.';
-                    showToast(msg, 'warning');
-                    disarmScanner(msg, 'warning');
-                    break;
-                }
+            while (true) {
                 const started = Date.now();
-                if (!registering && !actionBusy) {
-                    try { await sendFrame(); } catch (e) {}
-                }
+                try { await sendFrame(); } catch (e) {}
                 const wait = Math.max(0, ANALYZE_INTERVAL_MS - (Date.now() - started));
                 await new Promise(resolve => setTimeout(resolve, wait));
             }
-            scanLoopRunning = false;
         }
 
         function drawOverlay(boxes) {
@@ -1449,7 +1411,6 @@ HTML_TEMPLATE = """
         }
 
         function openModal() {
-            registering = true;
             document.getElementById('cancel-confirm-box').classList.add('hidden');
             regVideo.srcObject = video.srcObject;
             regVideo.play().catch(() => {});
@@ -1458,8 +1419,6 @@ HTML_TEMPLATE = """
         }
 
         function hideModal() {
-            registering = false;
-            armedAt = Date.now();
             document.getElementById('reg-modal').classList.add('hidden');
             document.getElementById('reg-form').reset();
             handleUserTypeChange('Student');
@@ -1533,7 +1492,9 @@ HTML_TEMPLATE = """
 def index():
     return redirect(url_for('login_page'))
 
+# ==================== New Login and Guard Routes ====================
 
+# Login page HTML template with two large buttons
 LOGIN_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1565,14 +1526,17 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>"""
 
+# Scanner route (previous home page)
 @app.route('/scanner')
 def scanner():
     return render_template_string(HTML_TEMPLATE)
 
+# Login page route
 @app.route('/login')
 def login_page():
     return render_template_string(LOGIN_TEMPLATE)
 
+# Guard login form template
 GUARD_LOGIN_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1610,6 +1574,7 @@ GUARD_LOGIN_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>"""
 
+# Guard login handling
 @app.route('/guard_login', methods=['GET', 'POST'])
 def guard_login():
     if request.method == 'POST':
@@ -1622,11 +1587,13 @@ def guard_login():
             return render_template_string(GUARD_LOGIN_TEMPLATE, error='Invalid credentials')
     return render_template_string(GUARD_LOGIN_TEMPLATE)
 
+# Logout route
 @app.route('/logout')
 def logout():
     session.pop('is_guard', None)
     return redirect(url_for('login_page'))
 
+# ==================== End New Routes ====================
 
 def face_problem(frame):
     boxes = detect_faces(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
@@ -1762,7 +1729,7 @@ def register():
             college = "Others"
             course = address
 
-        else:
+        else:  # Student
             student_id = request.form.get('student_id', '').strip()
             college = request.form.get('college', '').strip()
             program = request.form.get('course', '').strip().upper()
@@ -1775,6 +1742,7 @@ def register():
 
             course = f"{program} - Year {year_level}"
 
+        # 1. Manual check kung existing na ang ID
         existing_check = supabase.table("visitors").select("student_id").eq("student_id", student_id).execute()
         if existing_check.data:
             return jsonify({"success": False, "message": "Already Exist"}), 400
@@ -1827,6 +1795,7 @@ def register():
         })
     except Exception as e:
         error_str = str(e)
+        # 2. Sisiguraduhing "Already Exist" ang lalabas kapag na-trigger ang unique key constraint
         if "duplicate key" in error_str.lower() or "visitors_pkey" in error_str.lower() or "already exists" in error_str.lower():
             return jsonify({"success": False, "message": "Already Exist"}), 400
             
