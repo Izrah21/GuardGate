@@ -114,7 +114,7 @@ HTML_GUARD_STATION = """
                         tbody.innerHTML += `
                             <tr class="border-b border-slate-100 text-xs text-slate-700 hover:bg-emerald-50/30 transition-colors">
                                 <td class="p-3 font-semibold text-slate-900">${s.student_id}</td>
-                                <td class="p-3 font-medium cursor-help" tabindex="0" data-id="${escAttr(s.student_id)}" onmouseenter="showSummaryHover(this)" onmouseleave="scheduleHideSummary()" onfocus="showSummaryHover(this)" onblur="hideSummaryHover()">${s.normalized_name}</td>
+                                <td class="p-3 font-medium cursor-help" tabindex="0" data-id="${escAttr(s.student_id)}" onmouseenter="showSummaryHover(this)" onmouseleave="hideSummaryHover()" onfocus="showSummaryHover(this)" onblur="hideSummaryHover()">${s.normalized_name}</td>
                                 <td class="p-3"><span class="border text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${tagClass}">${s.college}</span></td>
                                 <td class="p-3 text-slate-600">${s.course_year || '-'}</td>
                                 <td class="p-3 flex items-center gap-1.5">
@@ -669,120 +669,8 @@ HTML_GUARD_STATION = """
             if (e.key === 'Escape') closeExportModal();
         });
 
-        let freqData = [];
-        let freqInitialized = false;
-        let freqRequestId = 0;
-
-        function showFreqError(message) {
-            const el = document.getElementById('freq-error');
-            el.innerText = message;
-            el.classList.toggle('hidden', !message);
-        }
-
-        function openFreqModal() {
-            closeNavMenu();
-            if (!freqInitialized) {
-                const now = new Date();
-                const current = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-                document.getElementById('freq-from').value = current;
-                document.getElementById('freq-to').value = current;
-                freqInitialized = true;
-            }
-            document.getElementById('freq-modal').classList.remove('hidden');
-            loadFreqSummary();
-            setTimeout(() => document.getElementById('freq-search').focus(), 50);
-        }
-
-        function closeFreqModal() {
-            document.getElementById('freq-modal').classList.add('hidden');
-        }
-
-        function onFreqPeriodChange() {
-            const allTime = document.getElementById('freq-all-time').checked;
-            document.getElementById('freq-from').disabled = allTime;
-            document.getElementById('freq-to').disabled = allTime;
-            loadFreqSummary();
-        }
-
-        function loadFreqSummary() {
-            const params = new URLSearchParams();
-            if (!document.getElementById('freq-all-time').checked) {
-                const from = document.getElementById('freq-from').value;
-                const to = document.getElementById('freq-to').value;
-                if (!from || !to) {
-                    showFreqError('Select both a start month and an end month.');
-                    return;
-                }
-                if (from > to) {
-                    showFreqError('The start month cannot be later than the end month.');
-                    return;
-                }
-                params.set('from', from);
-                params.set('to', to);
-            }
-            showFreqError('');
-
-            const requestId = ++freqRequestId;
-            document.getElementById('freq-tbody').innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">Loading summary...</td></tr>`;
-
-            fetch('/api/visit-summary?' + params.toString())
-                .then(r => r.json().catch(() => ({})).then(data => ({ ok: r.ok, data })))
-                .then(({ ok, data }) => {
-                    if (requestId !== freqRequestId) return;
-                    if (!ok) throw new Error(data.message || 'Failed to load the visit summary.');
-                    freqData = (data.visitors || []).map((v, i) => Object.assign({ rank: i + 1 }, v));
-                    document.getElementById('freq-total').innerText = data.total_entries || 0;
-                    document.getElementById('freq-active').innerText = freqData.filter(v => v.entries > 0).length;
-                    document.getElementById('freq-period').innerText = data.period || 'All time';
-                    renderFreqTable();
-                })
-                .catch(err => {
-                    if (requestId !== freqRequestId) return;
-                    freqData = [];
-                    document.getElementById('freq-total').innerText = 0;
-                    document.getElementById('freq-active').innerText = 0;
-                    showFreqError(err.message || 'Failed to load the visit summary.');
-                    renderFreqTable();
-                });
-        }
-
-        function renderFreqTable() {
-            const q = document.getElementById('freq-search').value.trim().toLowerCase();
-            const rows = freqData.filter(v => !q || (v.name || '').toLowerCase().includes(q) || (v.student_id || '').toLowerCase().includes(q));
-            const tbody = document.getElementById('freq-tbody');
-
-            if (rows.length === 0) {
-                const message = freqData.length === 0 ? 'No visitors found.' : 'No visitors match your search.';
-                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">${message}</td></tr>`;
-                return;
-            }
-
-            const maxEntries = Math.max(1, ...freqData.map(v => v.entries));
-            tbody.innerHTML = rows.map(v => {
-                const pct = Math.round((v.entries / maxEntries) * 100);
-                return `
-                    <tr class="border-b border-slate-100 text-xs text-slate-700 hover:bg-emerald-50/30 transition-colors">
-                        <td class="p-2.5 text-slate-400 font-semibold">${v.rank}</td>
-                        <td class="p-2.5 font-medium text-slate-900">${escAttr(v.name)} <span class="text-slate-400 text-[11px]">(${escAttr(v.student_id)})</span></td>
-                        <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${escAttr(v.college)}</span></td>
-                        <td class="p-2.5">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-8 text-sm font-bold text-emerald-900">${v.entries}</span>
-                                <div class="h-1.5 w-24 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-emerald-600" style="width: ${pct}%"></div></div>
-                            </div>
-                        </td>
-                        <td class="p-2.5 text-[11px] text-slate-600">${v.last_entry ? escAttr(v.last_entry) : '-'}</td>
-                    </tr>`;
-            }).join('');
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeFreqModal();
-        });
-
         let summaryHoverToken = 0;
         let summaryHoverTimer = null;
-        let summaryHideTimer = null;
         let summaryAnchor = null;
         const summaryCache = {};
         const SUMMARY_CACHE_MS = 15000;
@@ -820,9 +708,6 @@ HTML_GUARD_STATION = """
 
         function showSummaryHover(cell) {
             clearTimeout(summaryHoverTimer);
-            clearTimeout(summaryHideTimer);
-            if (summaryAnchor === cell) return;
-            if (summaryAnchor) hideSummaryCard();
             const token = ++summaryHoverToken;
             summaryHoverTimer = setTimeout(() => loadSummaryHover(cell, token), 200);
         }
@@ -913,31 +798,13 @@ HTML_GUARD_STATION = """
             positionSummaryHover();
         }
 
-        function hideSummaryCard() {
+        function hideSummaryHover() {
             clearTimeout(summaryHoverTimer);
-            clearTimeout(summaryHideTimer);
             summaryHoverToken++;
             summaryAnchor = null;
             const card = document.getElementById('summary-hover');
             if (card) card.classList.add('hidden');
         }
-
-        function hideSummaryHover() {
-            hideSummaryCard();
-        }
-
-        // Cursor entered the card: keep it open
-        function holdSummaryHover() {
-            clearTimeout(summaryHideTimer);
-        }
-
-        // Cursor left the name or the card: short grace period so it can cross from one to the other
-        function scheduleHideSummary() {
-            if (!summaryAnchor) { hideSummaryCard(); return; }
-            clearTimeout(summaryHideTimer);
-            summaryHideTimer = setTimeout(hideSummaryCard, 150);
-        }
-
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') hideSummaryHover();
@@ -1318,73 +1185,8 @@ HTML_GUARD_STATION = """
         </div>
     </div>
 
-    <!-- VISIT FREQUENCY SUMMARY MODAL -->
-    <div id="freq-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="freq-modal-title" onmousedown="if (event.target === this) closeFreqModal()">
-        <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-3xl max-h-[94vh] flex flex-col overflow-hidden border border-slate-200">
-
-            <div class="shrink-0 px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
-                <div class="flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-sm shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    </div>
-                    <div>
-                        <h3 id="freq-modal-title" class="text-sm font-bold text-slate-900">Visit Frequency Summary</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Total dorm entries per visitor. Each Time In counts as one entry.</p>
-                    </div>
-                </div>
-                <button type="button" onclick="closeFreqModal()" aria-label="Close" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg p-1.5 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <div class="shrink-0 px-6 pt-4 pb-3 space-y-3 border-b border-slate-100">
-                <div class="relative">
-                    <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"></path></svg>
-                    <input type="text" id="freq-search" oninput="renderFreqTable()" autocomplete="off" placeholder="Search name or ID" class="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-800 shadow-sm outline-none transition hover:border-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
-                </div>
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer select-none">
-                        <input type="checkbox" id="freq-all-time" checked onchange="onFreqPeriodChange()" class="w-3.5 h-3.5 rounded cursor-pointer accent-emerald-700">
-                        All time
-                    </label>
-                    <div class="flex items-center gap-2">
-                        <label for="freq-from" class="text-xs font-semibold text-slate-700">From</label>
-                        <input type="month" id="freq-from" onchange="onFreqPeriodChange()" disabled class="border border-slate-300 rounded-xl px-3 py-1.5 text-xs bg-white shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <label for="freq-to" class="text-xs font-semibold text-slate-700">To</label>
-                        <input type="month" id="freq-to" onchange="onFreqPeriodChange()" disabled class="border border-slate-300 rounded-xl px-3 py-1.5 text-xs bg-white shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                    </div>
-                </div>
-                <p id="freq-error" role="alert" class="hidden text-[11px] font-medium text-rose-600"></p>
-                <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
-                    <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">Total entries: <span id="freq-total">0</span></span>
-                    <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">Visitors with entries: <span id="freq-active">0</span></span>
-                    <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">Period: <span id="freq-period">All time</span></span>
-                </div>
-            </div>
-
-            <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-4">
-                <table class="w-full text-left border-collapse">
-                    <thead class="sticky top-0 bg-white">
-                        <tr class="border-b border-slate-100 text-[11px] text-slate-400 uppercase font-semibold">
-                            <th class="p-2.5 pt-3 w-10">Rank</th>
-                            <th class="p-2.5 pt-3">Visitor</th>
-                            <th class="p-2.5 pt-3">Category</th>
-                            <th class="p-2.5 pt-3">Total Entries</th>
-                            <th class="p-2.5 pt-3">Last Entry</th>
-                        </tr>
-                    </thead>
-                    <tbody id="freq-tbody"></tbody>
-                </table>
-            </div>
-
-            <div class="shrink-0 px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end">
-                <button type="button" onclick="closeFreqModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">Close</button>
-            </div>
-        </div>
-    </div>
-
     <!-- VISITOR SUMMARY HOVER CARD -->
-    <div id="summary-hover" class="hidden fixed z-[70] w-80 max-w-[calc(100vw-1rem)] rounded-2xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/20 p-4" role="tooltip" onmouseenter="holdSummaryHover()" onmouseleave="scheduleHideSummary()">
+    <div id="summary-hover" class="hidden fixed z-[70] w-80 max-w-[calc(100vw-1rem)] pointer-events-none rounded-2xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/20 p-4" role="tooltip">
         <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
                 <p id="summary-name" class="text-sm font-bold text-slate-900 break-words"></p>
@@ -1646,98 +1448,6 @@ def delete_all_logs():
         message = f"All {college} logs cleared ({deleted} deleted)."
     return jsonify({"message": message, "deleted": deleted})
 
-
-def _fetch_all_visitors():
-    rows = []
-    page_size = 1000
-    offset = 0
-    while True:
-        batch = supabase.table("visitors").select("*").order("student_id").range(offset, offset + page_size - 1).execute().data or []
-        rows.extend(batch)
-        if len(batch) < page_size:
-            break
-        offset += page_size
-    return rows
-
-@guard_bp.route('/api/visit-summary')
-def visit_summary():
-    from_month = request.args.get('from', '').strip()
-    to_month = request.args.get('to', '').strip()
-
-    clip = None
-    fetch_start = fetch_end = None
-    period_label = "All time"
-    if from_month or to_month:
-        if not from_month or not to_month:
-            return jsonify({"message": "Select both a start month and an end month."}), 400
-        try:
-            start, end, start_dt, to_dt = _month_bounds(from_month, to_month)
-        except ValueError as e:
-            msg = str(e) if "cannot be later" in str(e) else "Invalid month selection."
-            return jsonify({"message": msg}), 400
-        fmt = "%Y-%m-%d %H:%M:%S"
-        clip = (datetime.strptime(start, fmt), datetime.strptime(end, fmt))
-        fetch_start = (clip[0] - timedelta(days=1)).strftime(fmt)
-        fetch_end = (clip[1] + timedelta(days=1)).strftime(fmt)
-        if from_month == to_month:
-            period_label = start_dt.strftime("%B %Y")
-        else:
-            period_label = f"{start_dt.strftime('%B %Y')} to {to_dt.strftime('%B %Y')}"
-
-    try:
-        visitors = _fetch_all_visitors()
-        rows = _fetch_logs_for_export(fetch_start, fetch_end)
-    except Exception:
-        logging.exception("Failed to build visit summary")
-        return jsonify({"message": "Failed to load the visit summary."}), 500
-
-    people = OrderedDict()
-    for v in visitors:
-        people[v.get("student_id")] = {
-            "student_id": v.get("student_id"),
-            "name": _pretty_name(v.get("normalized_name")),
-            "college": v.get("college") or "-",
-            "entries": 0,
-            "last": None,
-        }
-
-    for r in rows:
-        if r.get("action") != "Time In":
-            continue
-        ts = _parse_ts(r.get("timestamp"))
-        if ts is None or (clip and not (clip[0] <= ts < clip[1])):
-            continue
-        sid = r.get("student_id")
-        person = people.get(sid)
-        if person is None:
-            person = people[sid] = {
-                "student_id": sid,
-                "name": _pretty_name(r.get("normalized_name")),
-                "college": r.get("college") or "-",
-                "entries": 0,
-                "last": None,
-            }
-        person["entries"] += 1
-        if person["last"] is None or ts > person["last"]:
-            person["last"] = ts
-
-    ordered = sorted(people.values(), key=lambda p: (-p["entries"], str(p["name"]).lower()))
-    return jsonify({
-        "period": period_label,
-        "total_entries": sum(p["entries"] for p in ordered),
-        "visitors": [
-            {
-                "student_id": p["student_id"],
-                "name": p["name"],
-                "college": p["college"],
-                "entries": p["entries"],
-                "last_entry": p["last"].strftime("%b %d, %Y %I:%M %p") if p["last"] else None,
-            }
-            for p in ordered
-        ],
-    })
-
-# ==================== PDF export (chart) ====================
 
 def _month_bounds(from_month, to_month):
     """Turn 'YYYY-MM' + 'YYYY-MM' into (start, end_exclusive) timestamp strings."""

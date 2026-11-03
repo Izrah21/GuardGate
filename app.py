@@ -48,7 +48,7 @@ sync_lock = threading.Lock()
 
 # Timer delay configuration (2.5 seconds hold before triggering Time In/Out)
 VERIFICATION_DELAY = 2.5
-COOLDOWN_SECONDS = 3
+COOLDOWN_SECONDS = 5
 ATTENDANCE_GRACE = 2.0
 FACE_LOST_RESET = 1.5
 

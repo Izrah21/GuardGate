@@ -18556,3 +18556,320 @@
 2026-11-03 13:36:45,737 - INFO - 127.0.0.1 - - [03/Nov/2026 13:36:45] "GET /api/logs?college=ALL HTTP/1.1" 200 -
 2026-11-03 13:36:48,759 - INFO - 127.0.0.1 - - [03/Nov/2026 13:36:48] "GET /api/logs?college=ALL HTTP/1.1" 200 -
 2026-11-03 13:37:41,809 - INFO - 127.0.0.1 - - [03/Nov/2026 13:37:41] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:14:11,139 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 14:14:11,143 - INFO - Press CTRL+C to quit
+2026-11-03 14:14:11,152 - INFO -  * Restarting with stat
+2026-11-03 14:14:15,779 - WARNING -  * Debugger is active!
+2026-11-03 14:14:15,784 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 14:14:25,339 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:25] "GET / HTTP/1.1" 302 -
+2026-11-03 14:14:25,403 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:25] "GET /login HTTP/1.1" 200 -
+2026-11-03 14:14:26,130 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:26] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-03 14:14:27,755 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:27] "GET /guard_login HTTP/1.1" 200 -
+2026-11-03 14:14:30,395 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:30] "POST /guard_login HTTP/1.1" 302 -
+2026-11-03 14:14:30,409 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:30] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:14:31,058 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:31] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:14:35,993 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:35] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:14:40,963 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:40] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:14:46,785 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:46] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:14:51,746 - INFO - 127.0.0.1 - - [03/Nov/2026 14:14:51] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:14:55,667 - INFO -  * Detected change in 'c:\\Users\\user\\Desktop\\Soft Eng\\GUARDGATE2\\admin.py', reloading
+2026-11-03 14:14:56,182 - INFO -  * Restarting with stat
+2026-11-03 14:15:01,586 - WARNING -  * Debugger is active!
+2026-11-03 14:15:01,599 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 14:15:02,186 - INFO - 127.0.0.1 - - [03/Nov/2026 14:15:02] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:15:02,228 - INFO - 127.0.0.1 - - [03/Nov/2026 14:15:02] "GET /api/guard/overview HTTP/1.1" 200 -
+2026-11-03 14:15:02,891 - INFO -  * Detected change in 'c:\\Users\\user\\Desktop\\Soft Eng\\GUARDGATE2\\guard.py', reloading
+2026-11-03 14:15:03,176 - INFO -  * Restarting with stat
+2026-11-03 14:20:42,694 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 14:20:42,697 - INFO - Press CTRL+C to quit
+2026-11-03 14:20:42,703 - INFO -  * Restarting with stat
+2026-11-03 14:20:46,369 - WARNING -  * Debugger is active!
+2026-11-03 14:20:46,372 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 14:21:08,025 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:08] "GET / HTTP/1.1" 302 -
+2026-11-03 14:21:08,086 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:08] "GET /login HTTP/1.1" 200 -
+2026-11-03 14:21:09,792 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:09] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 14:21:13,888 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:13] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:21:14,049 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:21:14,468 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:21:14,985 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:21:16,528 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:16] "GET /guard_login HTTP/1.1" 200 -
+2026-11-03 14:21:19,036 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:19] "POST /guard_login HTTP/1.1" 302 -
+2026-11-03 14:21:19,063 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:19] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:21:20,021 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:20] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:20,721 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:20] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 14:21:21,665 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:21] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-03 14:21:22,488 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:22,836 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:22] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-03 14:21:25,482 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:25] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:28,475 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:28] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:31,481 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:31] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:34,488 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:34] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:37,474 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:37] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:38,199 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:38] "GET /admin-login HTTP/1.1" 200 -
+2026-11-03 14:21:40,797 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:40] "POST /admin-login HTTP/1.1" 302 -
+2026-11-03 14:21:40,813 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:40] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-03 14:21:42,520 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:42] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-03 14:21:46,014 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:46] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:21:46,694 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:46] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 14:21:47,312 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:47] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:49,445 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:49] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-03 14:21:49,448 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:49] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:52,421 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:54,025 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:54] "GET /api/students/summary?student_id=24-1423124 HTTP/1.1" 200 -
+2026-11-03 14:21:55,458 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:55] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:21:58,414 - INFO - 127.0.0.1 - - [03/Nov/2026 14:21:58] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:01,434 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:04,424 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:04] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:07,454 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:10,422 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:10] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:13,460 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:16,420 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:16] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:19,436 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:19] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:22,731 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:25,745 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:25] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:28,748 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:28] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:31,814 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:31] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:34,745 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:34] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:37,745 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:37] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:40,735 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:40] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:43,744 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:43] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:46,784 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:46] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:49,747 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:49] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:52,756 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:55,751 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:55] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:22:58,739 - INFO - 127.0.0.1 - - [03/Nov/2026 14:22:58] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:01,755 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:04,769 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:04] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:07,733 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:10,732 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:10] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:13,764 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:16,738 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:16] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:19,762 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:19] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:23:41,792 - INFO - 127.0.0.1 - - [03/Nov/2026 14:23:41] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:08,341 - INFO -  * Detected change in 'c:\\Users\\user\\Desktop\\Soft Eng\\GUARDGATE2\\guard.py', reloading
+2026-11-03 14:24:11,567 - INFO -  * Restarting with stat
+2026-11-03 14:24:20,658 - WARNING -  * Debugger is active!
+2026-11-03 14:24:20,662 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 14:24:20,776 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:20] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:24:21,218 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:21,564 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:21] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-03 14:24:21,962 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:21] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-03 14:24:22,222 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:22,225 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:22] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 14:24:24,753 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:27,739 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:30,758 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:33,768 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:33] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:36,767 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:36] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:40,070 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:40] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:40,410 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:40] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-03 14:24:42,744 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:42] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:45,812 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:45] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:48,748 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:48] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:50,721 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:50] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:24:51,068 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:24:51,299 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:51,358 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:24:51,367 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:51,649 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:51,720 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:24:51,992 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:51,995 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:52,030 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:52,346 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:52,373 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:52,376 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:52,697 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:52,700 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:24:52,725 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:53,084 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:53] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:54,728 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:24:57,740 - INFO - 127.0.0.1 - - [03/Nov/2026 14:24:57] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:00,779 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:00] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:00,916 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,030 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,032 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,156 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,505 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,772 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,799 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,844 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:01,957 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:02,612 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:02] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:02,614 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:02] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:03,747 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:03] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:05,754 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:05,761 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:05,982 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:05,995 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,097 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,120 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,464 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,509 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,680 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,943 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,952 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:06,958 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:06] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:07,290 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:07] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:07,291 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:07] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:09,998 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:09] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:10,808 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:10] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:10,846 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:10,848 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:10] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:11,111 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:11,112 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:11,148 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:11,548 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:11,802 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:11,810 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:11,817 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:11,824 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:11,892 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:12,141 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:12,483 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:12,502 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:12,505 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:12,507 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:12,554 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:12,847 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:13,198 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:13,538 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:13,936 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:15,740 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:15] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:18,733 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:18] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:20,673 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:20] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:21,130 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:21,741 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:21] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:21,745 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:24,336 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:24] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-03 14:25:24,746 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:26,373 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:26] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:27,053 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:27,055 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:27] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-03 14:25:27,453 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:27,810 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:30,743 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:32,484 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:32] "POST /api/logs/delete-all HTTP/1.1" 200 -
+2026-11-03 14:25:32,826 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:32] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:33,735 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:33] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:36,735 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:36] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:25:38,065 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:38] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 14:25:40,728 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:40] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:40,799 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:40] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:41,243 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:41] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:41,718 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:41] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:42,163 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:42] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:43,488 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:43] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:44,471 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:44] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:45,838 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:45] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:45,953 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:45] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:48,093 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:48] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:48,278 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:48] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:49,468 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:49] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:51,013 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:51] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:51,221 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:51] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:53,596 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:53] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:54,673 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:54] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:56,232 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:56] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:57,301 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:57] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:58,377 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:58] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:25:59,441 - INFO - 127.0.0.1 - - [03/Nov/2026 14:25:59] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:00,504 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:00] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:02,045 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:02] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:03,129 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:03] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:04,230 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:04] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:05,301 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:05] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:06,357 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:06] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:07,840 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:07] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:08,909 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:08] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:09,982 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:11,071 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:11] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:12,151 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:12] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:14,042 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:14] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:15,498 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:15] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:16,611 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:16] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:17,689 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:17] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:19,176 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:19] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:20,281 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:20] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:21,370 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:21] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:22,470 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:22] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:23,558 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:23] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:25,004 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:25] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:26,096 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:26] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:27,178 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:27] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:28,247 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:28] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:29,330 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:29] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:30,779 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:30] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:31,927 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:31] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:33,097 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:33] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:26:34,183 - INFO - 127.0.0.1 - - [03/Nov/2026 14:26:34] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:11,013 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 14:45:11,015 - INFO - Press CTRL+C to quit
+2026-11-03 14:45:11,023 - INFO -  * Restarting with stat
+2026-11-03 14:45:14,889 - WARNING -  * Debugger is active!
+2026-11-03 14:45:14,894 - INFO -  * Debugger PIN: 119-448-259
+2026-11-03 14:45:15,385 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:15] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:16,631 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:16] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:17,777 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:17] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:18,229 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:18] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:18,694 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:18] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:19,125 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:19] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:25,297 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:25] "GET / HTTP/1.1" 302 -
+2026-11-03 14:45:25,358 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:25] "GET /login HTTP/1.1" 200 -
+2026-11-03 14:45:28,156 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:28] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 14:45:30,428 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:30] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:30,553 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:30] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:30,974 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:30] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:31,404 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:31] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:31,871 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:31] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:45:36,614 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:36] "GET /guard_login HTTP/1.1" 200 -
+2026-11-03 14:45:39,606 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:39] "POST /guard_login HTTP/1.1" 302 -
+2026-11-03 14:45:39,633 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:39] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:45:40,483 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:40] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:45:41,079 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:41] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 14:45:42,459 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:42] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-03 14:45:43,051 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:43] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:45:46,336 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:46] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:45:46,688 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:46] "GET /api/students/summary?student_id=24-1423124 HTTP/1.1" 200 -
+2026-11-03 14:45:47,989 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:47] "GET /api/students/summary?student_id=24-1423124 HTTP/1.1" 200 -
+2026-11-03 14:45:49,078 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:49] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:45:52,049 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:45:55,042 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:55] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:45:56,054 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:56] "GET /admin-login HTTP/1.1" 302 -
+2026-11-03 14:45:56,070 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:56] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-03 14:45:57,656 - INFO - 127.0.0.1 - - [03/Nov/2026 14:45:57] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-03 14:46:02,512 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:02] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-03 14:46:03,749 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:03] "GET /admin-logout HTTP/1.1" 302 -
+2026-11-03 14:46:03,768 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:03] "GET /admin-login HTTP/1.1" 200 -
+2026-11-03 14:46:05,650 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:05] "GET /login HTTP/1.1" 200 -
+2026-11-03 14:46:07,242 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:07] "GET /scanner HTTP/1.1" 200 -
+2026-11-03 14:46:09,244 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-03 14:46:09,692 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:09] "GET /guard_login HTTP/1.1" 200 -
+2026-11-03 14:46:12,407 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:12] "POST /guard_login HTTP/1.1" 302 -
+2026-11-03 14:46:12,440 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:12] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:46:13,201 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:13] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 14:46:13,203 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:46:15,423 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:15] "GET /admin-login HTTP/1.1" 200 -
+2026-11-03 14:46:18,513 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:18] "POST /admin-login HTTP/1.1" 302 -
+2026-11-03 14:46:18,527 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:18] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-03 14:46:20,004 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:20] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-03 14:46:23,349 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:23] "GET /guard HTTP/1.1" 200 -
+2026-11-03 14:46:24,079 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:24] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-03 14:46:24,081 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:46:26,040 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:26] "GET /api/students/summary?student_id=24-1423124 HTTP/1.1" 200 -
+2026-11-03 14:46:26,808 - INFO - 127.0.0.1 - - [03/Nov/2026 14:46:26] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-03 14:48:16,298 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.28.130:5000
+2026-11-03 14:48:16,299 - INFO - Press CTRL+C to quit
+2026-11-03 14:48:16,303 - INFO -  * Restarting with stat
