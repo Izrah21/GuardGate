@@ -22,7 +22,6 @@ app = Flask(__name__)
 app.secret_key = 'super-secret-key-please-change'
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 
-# I-register ang guard_bp para ma-call ang guard.py sa port 5000
 app.register_blueprint(guard_bp)
 app.register_blueprint(admin_bp)
 
@@ -46,20 +45,17 @@ last_sync_check = 0.0
 SYNC_INTERVAL = 5
 sync_lock = threading.Lock()
 
-# Timer delay configuration (2.5 seconds hold before triggering Time In/Out)
 VERIFICATION_DELAY = 0.5
 COOLDOWN_SECONDS = 3
 ATTENDANCE_GRACE = 2.0
 FACE_LOST_RESET = 1.5
 
-# Recognition tuning. LBPH returns a distance: LOWER = better match.
-# The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
-MATCH_THRESHOLD = 42       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
-MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
-DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
+MATCH_THRESHOLD = 42
+MATCH_MARGIN = 10
+DEBUG_CONFIDENCE = True
 FACE_SIZE = 200
-MIN_FACE_RATIO = 0.15      # smallest accepted face, as a fraction of frame width
-MAX_FACES_PER_FRAME = 1    # evaluate up to this many faces per frame (largest first)
+MIN_FACE_RATIO = 0.15
+MAX_FACES_PER_FRAME = 1
 CLIENT_TTL = 600
 DEFAULT_STATUS_TEXT = "System Active: Scanning for registered visitors..."
 PRESENCE_TTL = 15
@@ -72,7 +68,7 @@ def new_client_state():
     return {
         "cooldown_timer": 0,
         "cooldowns": {},
-        "verifying": {},          # visitor_id -> time their hold-still timer started
+        "verifying": {},
         "last_face_seen_time": 0,
         "last_active": time.time(),
         "current": {"visitor": None, "verified": False, "seen": 0},
@@ -105,10 +101,7 @@ if not os.path.exists(cascade_path):
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
 
-# --- app.py (Line 104) ---
-
 def detect_faces(gray, relaxed=False):
-    """Detect faces on a grayscale frame. Returns boxes sorted largest first."""
     frame_w = gray.shape[1]
     min_side = max(30 if relaxed else 48, int(frame_w * (0.04 if relaxed else MIN_FACE_RATIO)))
     equalized = cv2.equalizeHist(gray)
@@ -116,7 +109,7 @@ def detect_faces(gray, relaxed=False):
         faces = face_cascade.detectMultiScale(
             equalized,
             scaleFactor=1.05 if relaxed else 1.08,
-            minNeighbors=4 if relaxed else 8,  # Increased from 6 to 8 for tighter filtering
+            minNeighbors=4 if relaxed else 8,
             minSize=(min_side, min_side),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
@@ -128,9 +121,8 @@ def detect_faces(gray, relaxed=False):
 def face_from_gray(gray, box):
     x, y, w, h = box
 
-    # Relaxed trimming so distinct features aren't lost
-    trim_x = int(w * 0.12)      # Was 0.18
-    trim_y_top = int(h * 0.15)  # Was 0.22
+    trim_x = int(w * 0.12)
+    trim_y_top = int(h * 0.15)
     trim_y_bot = int(h * 0.10)
     
     roi = gray[max(0, y + trim_y_top):y + h - trim_y_bot, max(0, x + trim_x):x + w - trim_x]
@@ -138,26 +130,21 @@ def face_from_gray(gray, box):
         roi = gray[y:y + h, x:x + w]
         
     roi = cv2.resize(roi, (FACE_SIZE, FACE_SIZE), interpolation=cv2.INTER_AREA)
-    # Stronger CLAHE grid to flatten harsh room lighting differences
     return cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(roi)
 
 
 def augment_face(face):
-    """Generates robust variations (flips, shifts, lighting) to fix 1-shot learning weakness."""
     samples = [face]
     h, w = face.shape
     
-    # Brightness variations
     samples.append(cv2.convertScaleAbs(face, alpha=1.05, beta=10))
     samples.append(cv2.convertScaleAbs(face, alpha=0.95, beta=-10))
     
-    # Spatial Jitter (accounts for bounding box bouncing in live video)
     for dx in (-6, 6):
         for dy in (-6, 6):
             m = np.float32([[1, 0, dx], [0, 1, dy]])
             samples.append(cv2.warpAffine(face, m, (w, h), borderMode=cv2.BORDER_REPLICATE))
     
-    # Mirror images for symmetrical posing
     flipped = cv2.flip(face, 1)
     samples.append(flipped)
     for dx in (-4, 4):
@@ -168,7 +155,6 @@ def augment_face(face):
 
 
 def extract_training_face(gray, label):
-    """Registration stores the whole camera frame, so find and crop the face before training."""
     boxes = detect_faces(gray) or detect_faces(gray, relaxed=True)
     if boxes:
         return face_from_gray(gray, boxes[0])
@@ -311,7 +297,6 @@ load_recognizer_training()
 
 
 def identify_face(face_roi):
-    """Return (visitor or None, best_distance). Call while holding cv_lock."""
     ranked = None
     try:
         collector = cv2.face.StandardCollector_create()
@@ -634,9 +619,8 @@ HTML_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GuardGate</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Lock the page to the viewport: no root or body scrolling */
         html, body {
             height: 100%;
             width: 100%;
@@ -645,7 +629,7 @@ HTML_TEMPLATE = """
         }
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%);
+            background: transparent;
         }
         .app-root {
             height: 100vh;
@@ -653,187 +637,198 @@ HTML_TEMPLATE = """
             width: 100vw;
             overflow: hidden;
         }
+    
+        html{background:#06020d}
+        body{background:transparent!important;color:#f3e8ff}
+        body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(55rem 38rem at 8% -8%,rgba(217,70,239,.38),transparent 62%),radial-gradient(48rem 38rem at 100% 12%,rgba(124,58,237,.38),transparent 62%),radial-gradient(46rem 34rem at 55% 118%,rgba(236,72,153,.30),transparent 62%),linear-gradient(180deg,#0a0316,#13061f)}
+        body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(232,121,249,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,.07) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 78%)}
+        .glass{background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.03));-webkit-backdrop-filter:blur(24px) saturate(170%);backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 0 1px rgba(217,70,239,.10),0 24px 70px -24px rgba(168,85,247,.65),inset 0 1px 0 rgba(255,255,255,.16)}
+        .glass-strong{background:linear-gradient(145deg,rgba(40,16,66,.94),rgba(18,7,32,.96));-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(232,121,249,.28);box-shadow:0 0 38px -6px rgba(217,70,239,.45),0 30px 80px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.14)}
+        .neon-text{background:linear-gradient(90deg,#f5d0fe,#e879f9 45%,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px rgba(232,121,249,.55))}
+        h1,h2{font-family:'Orbitron','Plus Jakarta Sans',sans-serif;letter-spacing:.03em}
+        html input,html select,html textarea{color:#fff;color-scheme:dark;background-color:rgba(255,255,255,.06)}
+        input::placeholder,textarea::placeholder{color:rgba(255,255,255,.35)}
+        select option{background:#1a0a2e;color:#fff}
+        html input:focus,html select:focus{box-shadow:0 0 0 3px rgba(217,70,239,.25),0 0 18px rgba(217,70,239,.35)}
+        .from-fuchsia-500.to-purple-600{filter:drop-shadow(0 0 10px rgba(217,70,239,.55))}
+        button:disabled{filter:none!important}
+        .scan-active{box-shadow:0 0 0 2px rgba(244,114,182,.9),0 0 28px rgba(244,114,182,.7)!important;animation:neon-pulse 1.6s ease-in-out infinite}
+        @keyframes neon-pulse{50%{box-shadow:0 0 0 2px rgba(244,114,182,.9),0 0 44px rgba(232,121,249,.95)}}
+        @media (prefers-reduced-motion:reduce){.scan-active{animation:none}}
+        *{scrollbar-width:thin;scrollbar-color:rgba(217,70,239,.5) transparent}
     </style>
 </head>
-<body class="text-slate-800 antialiased overflow-hidden">
+<body class="text-slate-100 antialiased overflow-hidden">
 
-    <!-- FLOATING TOAST NOTIFICATION CONTAINER (Eliminates 'localhost says' alerts) -->
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
     <div class="app-root flex flex-col">
 
-        <!-- HEADER -->
-        <header class="shrink-0 px-4 sm:px-8 py-3 border-b border-emerald-900/10 bg-white/60 backdrop-blur flex items-center">
+        <header class="shrink-0 px-4 sm:px-8 py-3 border-b border-white/10 bg-white/[0.05] backdrop-blur flex items-center">
             <div class="flex items-center gap-3 min-w-0">
-                <div class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-800/15 shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-fuchsia-500/40 shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 </div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                        <h1 class="text-xl sm:text-2xl font-bold text-emerald-950 tracking-tight leading-tight">GuardGate</h1>
+                        <h1 class="text-xl sm:text-2xl font-bold neon-text tracking-tight leading-tight">GuardGate</h1>
                     </div>
                     
                 </div>
             </div>
         </header>
 
-        <!-- MAIN SCANNER CONTAINER -->
         <main class="flex-1 min-h-0 p-3 sm:p-5">
-            <div class="h-full w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 overflow-hidden">
+            <div class="h-full w-full max-w-6xl mx-auto flex flex-col md:flex-row rounded-2xl overflow-hidden glass">
 
-                <!-- LEFT: INFORMATION AND CREDENTIALS -->
                 <section class="order-2 md:order-1 flex-1 min-w-0 min-h-0 flex flex-col">
-                    <div class="shrink-0 px-4 sm:px-5 py-3 border-b border-emerald-900/5 bg-emerald-50/40 flex justify-between items-center gap-2">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-900 flex items-center gap-2 min-w-0">
-                            <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                    <div class="shrink-0 px-4 sm:px-5 py-3 border-b border-white/10 bg-white/5 flex justify-between items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-fuchsia-100 flex items-center gap-2 min-w-0">
+                            <svg class="w-4 h-4 text-fuchsia-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
                             <span class="truncate">Visitor Credentials</span>
                         </span>
-                        <span class="shrink-0 text-[11px] font-medium text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                        <span class="shrink-0 text-[11px] font-medium text-fuchsia-200 bg-fuchsia-500/20 px-2.5 py-0.5 rounded-full">
                             Verify: 2.5s Hold
                         </span>
                     </div>
 
                     <div class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
-                        <div id="status-panel" class="rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-4 py-3 text-center text-sm font-medium text-emerald-800 transition-colors duration-300">
-                            System Active: Scanning for registered visitors...
+                        <div id="status-panel" class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-medium text-fuchsia-200 transition-colors duration-300">
+                            Scanner locked. Press Time In or Time Out to begin.
                         </div>
 
-                        <div class="rounded-xl border border-emerald-900/10 overflow-hidden">
-                            <div class="flex items-center gap-4 p-4 bg-emerald-50/50 border-b border-emerald-900/10">
-                                <div id="v-avatar" class="w-14 h-14 shrink-0 rounded-2xl bg-slate-300 text-white flex items-center justify-center text-lg font-bold">--</div>
+                        <div class="rounded-xl border border-white/10 overflow-hidden">
+                            <div class="flex items-center gap-4 p-4 bg-white/5 border-b border-white/10">
+                                <div id="v-avatar" class="w-14 h-14 shrink-0 rounded-2xl bg-white/20 text-white flex items-center justify-center text-lg font-bold">--</div>
                                 <div class="min-w-0 flex-1">
-                                    <p id="v-name" class="text-base sm:text-lg font-bold text-emerald-950 truncate">No visitor detected</p>
-                                    <p id="v-id" class="text-xs font-medium text-emerald-900/60 truncate">Step in front of the camera</p>
+                                    <p id="v-name" class="text-base sm:text-lg font-bold text-white truncate">No visitor detected</p>
+                                    <p id="v-id" class="text-xs font-medium text-fuchsia-200/60 truncate">Step in front of the camera</p>
                                 </div>
                                 <span id="v-presence" class="hidden shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border"></span>
                             </div>
                             <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
                                 <div>
                                     <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Category</dt>
-                                    <dd id="v-category" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                    <dd id="v-category" class="mt-0.5 text-sm font-semibold text-slate-100">-</dd>
                                 </div>
                                 <div>
                                     <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">College</dt>
-                                    <dd id="v-college" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                    <dd id="v-college" class="mt-0.5 text-sm font-semibold text-slate-100">-</dd>
                                 </div>
                                 <div class="sm:col-span-2">
                                     <dt id="v-detail-label" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Course / Dept / Address</dt>
-                                    <dd id="v-detail" class="mt-0.5 text-sm font-semibold text-slate-800 break-words">-</dd>
+                                    <dd id="v-detail" class="mt-0.5 text-sm font-semibold text-slate-100 break-words">-</dd>
                                 </div>
                                 <div>
                                     <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Last Action</dt>
-                                    <dd id="v-last-action" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                    <dd id="v-last-action" class="mt-0.5 text-sm font-semibold text-slate-100">-</dd>
                                 </div>
                                 <div>
                                     <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Recorded At</dt>
-                                    <dd id="v-last-time" class="mt-0.5 text-sm font-semibold text-slate-800">-</dd>
+                                    <dd id="v-last-time" class="mt-0.5 text-sm font-semibold text-slate-100">-</dd>
                                 </div>
                             </dl>
                         </div>
                     </div>
 
-                    <div class="shrink-0 p-4 sm:p-5 border-t border-emerald-900/10 bg-white">
+                    <div class="shrink-0 p-4 sm:p-5 border-t border-white/10 bg-white/[0.06]">
                         <div class="grid grid-cols-2 gap-3">
-                            <button id="time-in-btn" type="button" onclick="recordAttendance('Time In')" disabled class="py-3 px-4 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
-                                Time In
-                            </button>
-                            <button id="time-out-btn" type="button" onclick="recordAttendance('Time Out')" disabled class="py-3 px-4 text-sm font-semibold text-rose-700 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
-                                Time Out
-                            </button>
+                            <button id="time-in-btn" type="button" onclick="armScanner('Time In')" class="py-3 px-4 text-sm font-semibold text-white bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-xl hover:brightness-110 focus:ring-4 focus:ring-fuchsia-400/30 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"><span>Time In</span></button>
+                            <button id="time-out-btn" type="button" onclick="armScanner('Time Out')" class="py-3 px-4 text-sm font-semibold text-pink-200 bg-white/[0.06] border border-pink-400/50 rounded-xl hover:bg-pink-500/10 focus:ring-4 focus:ring-pink-400/30 transition shadow-[0_0_18px_-4px_rgba(244,114,182,0.6)] disabled:opacity-40 disabled:cursor-not-allowed"><span>Time Out</span></button>
                         </div>
-                        <button id="register-btn" type="button" onclick="openModal()" class="hidden mt-3 w-full py-2.5 px-4 text-sm font-semibold text-emerald-800 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition shadow-sm flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        <button id="register-btn" type="button" onclick="openModal()" class="hidden mt-3 w-full py-2.5 px-4 text-sm font-semibold text-fuchsia-200 bg-white/[0.06] border border-fuchsia-400/30 rounded-xl hover:bg-white/10 transition shadow-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-fuchsia-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                             Register New Visitor
                         </button>
                     </div>
                 </section>
 
-                <!-- RIGHT: SMALL CAMERA FEED -->
-                <aside class="order-1 md:order-2 shrink-0 w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-l border-emerald-900/10 bg-slate-50/60 p-3 md:p-4 flex flex-col min-h-0">
-                    <div class="mb-2 md:mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-900">
-                        <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                <aside class="order-1 md:order-2 shrink-0 w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-l border-white/10 bg-white/5 p-3 md:p-4 flex flex-col min-h-0">
+                    <div class="mb-2 md:mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-fuchsia-100">
+                        <svg class="w-4 h-4 text-fuchsia-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         Live Camera
                     </div>
 
-                    <div id="camera-container" class="relative bg-slate-900 w-full max-w-[14rem] md:max-w-none mx-auto aspect-video rounded-xl overflow-hidden shadow-sm">
+                    <div id="camera-container" class="relative bg-black/60 w-full max-w-[14rem] md:max-w-none mx-auto aspect-video rounded-xl overflow-hidden ring-1 ring-fuchsia-400/40 shadow-[0_0_28px_-6px_rgba(217,70,239,0.6)]">
                         <video id="webcam" autoplay playsinline muted class="object-contain h-full w-full opacity-95 -scale-x-100"></video>
                         <canvas id="overlay" class="absolute inset-0 h-full w-full pointer-events-none"></canvas>
 
-                        <div id="standby-container" class="hidden absolute inset-0 p-3 text-center bg-slate-900 text-slate-400 flex flex-col items-center justify-center gap-2">
-                            <svg class="w-6 h-6 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <div id="lock-container" class="absolute inset-0 p-3 text-center bg-[#0b0414] text-slate-400 flex flex-col items-center justify-center gap-2">
+                            <svg class="w-7 h-7 text-fuchsia-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <p class="text-xs font-semibold text-slate-200">Scanner Locked</p>
+                            <p class="text-[11px] text-slate-400">Press Time In or Time Out to start scanning.</p>
+                        </div>
+
+                        <div id="standby-container" class="hidden absolute inset-0 p-3 text-center bg-[#0b0414] text-slate-400 flex flex-col items-center justify-center gap-2">
+                            <svg class="w-6 h-6 text-fuchsia-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             <p class="text-xs font-semibold text-slate-200">Scanner on Standby</p>
                             <p class="text-[11px] text-slate-400">Step in front of the camera to wake it up.</p>
                         </div>
                     </div>
 
-                    <ol class="hidden md:block mt-4 space-y-2 text-xs text-slate-600 leading-relaxed overflow-y-auto min-h-0">
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">1</span>Face the camera and hold still until you are verified.</li>
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">2</span>Check your credentials on the left.</li>
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center">3</span>Press Time In to enter or Time Out to leave.</li>
-                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] font-bold flex items-center justify-center">?</span>Not recognized? Use Register New Visitor.</li>
+                    <ol class="hidden md:block mt-4 space-y-2 text-xs text-slate-300 leading-relaxed overflow-y-auto min-h-0">
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-fuchsia-500/20 text-fuchsia-200 text-[11px] font-bold flex items-center justify-center">1</span>Press Time In to enter or Time Out to leave. The scanner stays locked until you do.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-fuchsia-500/20 text-fuchsia-200 text-[11px] font-bold flex items-center justify-center">2</span>Face the camera and hold still until you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-fuchsia-500/20 text-fuchsia-200 text-[11px] font-bold flex items-center justify-center">3</span>Your attendance is recorded automatically once you are verified.</li>
+                        <li class="flex gap-2.5"><span class="shrink-0 w-5 h-5 rounded-full bg-white/15 text-slate-300 text-[11px] font-bold flex items-center justify-center">?</span>Not recognized? Use Register New Visitor.</li>
                     </ol>
                 </aside>
             </div>
         </main>
     </div>
 
-    <!-- REGISTRATION MODAL -->
-    <div id="reg-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 transition-opacity duration-300 overflow-hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden border border-emerald-900/15 relative">
+    <div id="reg-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 transition-opacity duration-300 overflow-hidden">
+        <div class="rounded-2xl w-full max-w-4xl max-h-[94vh] max-h-[94dvh] flex flex-col overflow-hidden relative glass-strong">
             
-            <!-- MODAL HEADER -->
-            <div class="shrink-0 px-6 py-4 border-b border-emerald-900/10 flex justify-between items-center bg-emerald-50/60">
+            <div class="shrink-0 px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white flex items-center justify-center">
    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <div>
-   <h2 class="text-base font-bold text-emerald-950">New Visitor Registration</h2>
-   <p class="text-[11px] text-emerald-800/70 font-medium">Select your category to configure required details</p>
+   <h2 class="text-base font-bold text-white">New Visitor Registration</h2>
+   <p class="text-[11px] text-fuchsia-200/70 font-medium">Select your category to configure required details</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-700 transition-colors rounded-xl p-1.5 hover:bg-emerald-100/50">
+                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-white transition-colors rounded-xl p-1.5 hover:bg-white/10">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
-            <!-- REGISTRATION FORM -->
             <form id="reg-form" onsubmit="submitRegistration(event)" class="p-4 sm:p-6 overflow-y-auto min-h-0 flex-1">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <div class="md:col-span-3 min-w-0">
                 
-                <!-- USER TYPE SELECTOR (FIRST SELECTION) -->
-                <div class="mb-6 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-1.5 flex items-center gap-1.5">
-   <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-   User Type <span class="text-rose-600">*</span>
+                <div class="mb-6 p-4 rounded-xl bg-white/5 border border-fuchsia-400/30">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-fuchsia-100 mb-1.5 flex items-center gap-1.5">
+   <svg class="w-4 h-4 text-fuchsia-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+   User Type <span class="text-rose-400">*</span>
                     </label>
-                    <select id="user_type" name="user_type" onchange="handleUserTypeChange(this.value)" class="w-full border border-emerald-300 rounded-lg px-3.5 py-2.5 text-sm font-semibold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm cursor-pointer">
+                    <select id="user_type" name="user_type" onchange="handleUserTypeChange(this.value)" class="w-full border border-fuchsia-400/40 rounded-lg px-3.5 py-2.5 text-sm font-semibold bg-white/[0.06] text-slate-100 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm cursor-pointer">
    <option value="Student">Student</option>
    <option value="Parent">Parent</option>
    <option value="Faculty">Faculty</option>
    <option value="Others">Others</option>
                     </select>
-                    <p id="user_type_hint" class="text-[11px] text-emerald-800/80 mt-1.5 font-medium">Standard student registration requiring Student ID and College.</p>
+                    <p id="user_type_hint" class="text-[11px] text-fuchsia-200/80 mt-1.5 font-medium">Standard student registration requiring Student ID and College.</p>
                 </div>
 
-                <!-- NAME FIELDS (COMMON TO ALL) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
-   <input type="text" name="surname" id="field_surname" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">Surname <span class="text-rose-400">*</span></label>
+   <input type="text" name="surname" id="field_surname" required placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">First Name <span class="text-rose-600">*</span></label>
-   <input type="text" name="fname" id="field_fname" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">First Name <span class="text-rose-400">*</span></label>
+   <input type="text" name="fname" id="field_fname" required placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-   <label id="label_mname" class="block text-xs font-semibold text-slate-700">Middle Name <span class="text-slate-400 font-normal">(Optional)</span></label>
-   <input type="text" name="mname" id="field_mname" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label id="label_mname" class="block text-xs font-semibold text-slate-200">Middle Name <span class="text-slate-400 font-normal">(Optional)</span></label>
+   <input type="text" name="mname" id="field_mname" placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                     <div id="group-suffix" class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">Suffix</label>
-   <select name="suffix" id="field_suffix" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white">
+   <label class="block text-xs font-semibold text-slate-200">Suffix</label>
+   <select name="suffix" id="field_suffix" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm bg-white/[0.06]">
        <option value="N/A">N/A</option>
        <option value="Jr.">Jr.</option>
        <option value="Sr.">Sr.</option>
@@ -843,11 +838,10 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- STUDENT SECTION: COLLEGE DROPDOWN, STUDENT ID, YEAR LEVEL (1-4), COURSE / PROGRAM -->
-                <div id="group-student" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="group-student" class="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
-   <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
-   <select name="college" id="field_college" required class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+   <label class="block text-xs font-semibold text-slate-200">College <span class="text-rose-400">*</span></label>
+   <select name="college" id="field_college" required class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm bg-white/[0.06] cursor-pointer">
        <option value="" disabled selected>Select College...</option>
        <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
        <option value="CAS">CAS : College of Arts and Sciences</option>
@@ -862,12 +856,12 @@ HTML_TEMPLATE = """
    </select>
                     </div>
                     <div class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">Student ID <span class="text-rose-600">*</span></label>
-   <input type="text" name="student_id" id="field_student_id" required placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">Student ID <span class="text-rose-400">*</span></label>
+   <input type="text" name="student_id" id="field_student_id" required placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                     <div class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">Year Level <span class="text-rose-600">*</span></label>
-   <select name="year_level" id="field_year" required class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+   <label class="block text-xs font-semibold text-slate-200">Year Level <span class="text-rose-400">*</span></label>
+   <select name="year_level" id="field_year" required class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm bg-white/[0.06] cursor-pointer">
        <option value="" disabled selected>Select Year...</option>
        <option value="1">1</option>
        <option value="2">2</option>
@@ -876,24 +870,22 @@ HTML_TEMPLATE = """
    </select>
                     </div>
                     <div class="space-y-1.5 md:col-span-2">
-   <label class="block text-xs font-semibold text-slate-700">Course / Program <span class="text-rose-600">*</span></label>
-   <input type="text" name="course" id="field_course" required maxlength="40" placeholder="e.g. BSCS" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">Course / Program <span class="text-rose-400">*</span></label>
+   <input type="text" name="course" id="field_course" required maxlength="40" placeholder="e.g. BSCS" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                 </div>
 
-                <!-- PARENT SECTION: same grid as Student, no ID and no college (suffix is in the shared name fields) -->
-                <div id="group-parent" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="group-parent" class="hidden mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
-   <label class="block text-xs font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
-   <input type="text" name="parent_address" id="field_parent_address" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">Home / Residential Address <span class="text-rose-400">*</span></label>
+   <input type="text" name="parent_address" id="field_parent_address" placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                 </div>
 
-                <!-- FACULTY SECTION: same grid as Student, no ID; College + Department -->
-                <div id="group-faculty" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="group-faculty" class="hidden mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5 md:col-span-2">
-   <label class="block text-xs font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
-   <select name="faculty_college" id="field_faculty_college" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm bg-white cursor-pointer">
+   <label class="block text-xs font-semibold text-slate-200">College <span class="text-rose-400">*</span></label>
+   <select name="faculty_college" id="field_faculty_college" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm bg-white/[0.06] cursor-pointer">
        <option value="" disabled selected>Select College...</option>
        <option value="CCIS">CCIS : College of Computing and Information Sciences</option>
        <option value="CAS">CAS : College of Arts and Sciences</option>
@@ -908,37 +900,35 @@ HTML_TEMPLATE = """
    </select>
                     </div>
                     <div class="space-y-1.5 md:col-span-2">
-   <label class="block text-xs font-semibold text-slate-700">Department<span class="text-rose-600">*</span></label>
-   <input type="text" name="department" id="field_department" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">Department<span class="text-rose-400">*</span></label>
+   <input type="text" name="department" id="field_department" placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                 </div>
 
-                <!-- OTHERS SECTION: NAME FIELDS + ADDRESS/PURPOSE -->
-                <div id="group-others" class="hidden mt-4 pt-4 border-t border-slate-100">
+                <div id="group-others" class="hidden mt-4 pt-4 border-t border-white/10">
                     <div class="space-y-1.5">
-   <label class="block text-xs font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
-   <input type="text" name="other_address" id="field_other_address" placeholder="" class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition shadow-sm">
+   <label class="block text-xs font-semibold text-slate-200">Address or Purpose of Visit <span class="text-rose-400">*</span></label>
+   <input type="text" name="other_address" id="field_other_address" placeholder="" class="w-full border border-white/15 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition shadow-sm">
                     </div>
                 </div>
 
                 </div>
 
-                <!-- FACE CAPTURE -->
                 <div class="md:col-span-2 min-w-0">
-                    <div class="md:sticky md:top-0 rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-2">
-                            Face Capture <span class="text-rose-600">*</span>
+                    <div class="md:sticky md:top-0 rounded-xl border border-fuchsia-400/30 bg-white/5 p-4">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-fuchsia-100 mb-2">
+                            Face Capture <span class="text-rose-400">*</span>
                         </label>
-                        <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900">
+                        <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-black/60">
                             <video id="reg-video" autoplay playsinline muted class="absolute inset-0 h-full w-full object-contain -scale-x-100"></video>
-                            <img id="reg-preview" alt="Captured face" class="hidden absolute inset-0 h-full w-full object-contain bg-slate-900">
+                            <img id="reg-preview" alt="Captured face" class="hidden absolute inset-0 h-full w-full object-contain bg-black/60">
                         </div>
-                        <p id="capture-hint" class="mt-2 text-[11px] font-medium text-emerald-800/80">Face the camera in good light, then press Capture Photo.</p>
+                        <p id="capture-hint" class="mt-2 text-[11px] font-medium text-fuchsia-200/80">Face the camera in good light, then press Capture Photo.</p>
                         <div class="mt-3 grid grid-cols-1 gap-2">
-                            <button type="button" id="capture-btn" onclick="captureFace()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                            <button type="button" id="capture-btn" onclick="captureFace()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-xl hover:brightness-110 focus:ring-4 focus:ring-fuchsia-400/30 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                                 Capture Photo
                             </button>
-                            <button type="button" id="retake-btn" onclick="retakeFace()" class="hidden w-full px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">
+                            <button type="button" id="retake-btn" onclick="retakeFace()" class="hidden w-full px-4 py-2.5 text-sm font-semibold text-slate-200 bg-white/[0.06] border border-white/15 rounded-xl hover:bg-white/10 transition shadow-sm">
                                 Retake
                             </button>
                         </div>
@@ -946,18 +936,17 @@ HTML_TEMPLATE = """
                 </div>
                 </div>
 
-                <!-- IN-MODAL CONFIRMATION DIALOG (Avoids browser confirm()) -->
-                <div id="cancel-confirm-box" class="hidden mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
+                <div id="cancel-confirm-box" class="hidden mt-6 p-4 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-200">
                     <div class="flex items-start gap-3">
-   <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+   <svg class="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
    <div class="flex-1">
        <p class="text-xs font-bold">Discard entered information?</p>
-       <p class="text-[11px] text-amber-800 mt-0.5">You have unsaved changes in the form. Are you sure you want to exit?</p>
+       <p class="text-[11px] text-amber-200 mt-0.5">You have unsaved changes in the form. Are you sure you want to exit?</p>
        <div class="mt-3 flex items-center gap-2">
-           <button type="button" onclick="dismissConfirmClose(true)" class="px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-sm">
+           <button type="button" onclick="dismissConfirmClose(true)" class="px-3 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-400 rounded-lg transition shadow-sm">
                Yes, Discard
            </button>
-           <button type="button" onclick="dismissConfirmClose(false)" class="px-3 py-1.5 text-xs font-semibold text-amber-900 bg-white border border-amber-300 hover:bg-amber-100 rounded-lg transition shadow-sm">
+           <button type="button" onclick="dismissConfirmClose(false)" class="px-3 py-1.5 text-xs font-semibold text-amber-200 bg-white/[0.06] border border-amber-400/40 hover:bg-amber-400/10 rounded-lg transition shadow-sm">
                Keep Editing
            </button>
        </div>
@@ -965,12 +954,11 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- FORM BUTTONS -->
-                <div class="sticky bottom-0 z-10 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 mt-6 px-4 sm:px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+                <div class="sticky bottom-0 z-10 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 mt-6 px-4 sm:px-6 py-4 bg-[#14071f] border-t border-white/10 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-300 bg-white/[0.06] border border-white/15 rounded-xl hover:bg-white/10 transition-colors shadow-sm">
    Cancel
                     </button>
-                    <button id="submit-btn" type="submit" disabled class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-700">
+                    <button id="submit-btn" type="submit" disabled class="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-xl hover:brightness-110 focus:ring-4 focus:ring-fuchsia-400/30 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
    Save
                     </button>
@@ -979,11 +967,17 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
     <script>
         let lastFaceTime = Date.now();
         let isCameraHidden = false;
         let actionBusy = false;
+        let scanArmed = false;
+        let armedAction = null;
+        let armedAt = 0;
+        let registering = false;
+        let scanLoopRunning = false;
+        const SCAN_WINDOW_MS = 30000;
+        const LOCKED_TEXT = 'Scanner locked. Press Time In or Time Out to begin.';
         let capturedBlob = null;
         let capturedUrl = null;
 
@@ -996,23 +990,23 @@ HTML_TEMPLATE = """
             
             let iconSvg = '';
             if (type === 'success') {
-                toast.className += ' bg-emerald-50 text-emerald-900 border-emerald-200 shadow-emerald-900/5';
-                iconSvg = `<svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                toast.className += ' bg-white/5 text-fuchsia-100 border-fuchsia-400/30 shadow-fuchsia-500/20';
+                iconSvg = `<svg class="w-5 h-5 text-fuchsia-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
             } else if (type === 'error') {
-                toast.className += ' bg-rose-50 text-rose-900 border-rose-200 shadow-rose-900/5';
-                iconSvg = `<svg class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+                toast.className += ' bg-rose-500/10 text-rose-200 border-rose-400/30 shadow-rose-500/20';
+                iconSvg = `<svg class="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
             } else if (type === 'warning') {
-                toast.className += ' bg-amber-50 text-amber-900 border-amber-200 shadow-amber-900/5';
-                iconSvg = `<svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                toast.className += ' bg-amber-400/10 text-amber-200 border-amber-400/30 shadow-amber-400/20';
+                iconSvg = `<svg class="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
             } else {
-                toast.className += ' bg-slate-50 text-slate-900 border-slate-200';
-                iconSvg = `<svg class="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                toast.className += ' bg-white/5 text-white border-white/10';
+                iconSvg = `<svg class="w-5 h-5 text-slate-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
             }
 
             toast.innerHTML = `
                 ${iconSvg}
                 <div data-msg class="flex-1 text-xs leading-relaxed break-words"></div>
-                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors">
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white p-0.5 rounded-lg transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             `;
@@ -1030,7 +1024,6 @@ HTML_TEMPLATE = """
             }, duration);
         }
 
-        // Dynamic User Type Form Adjustment
         function handleUserTypeChange(type) {
             const studentGroup = document.getElementById('group-student');
             const parentGroup = document.getElementById('group-parent');
@@ -1041,13 +1034,11 @@ HTML_TEMPLATE = """
             const mnameLabel = document.getElementById('label_mname');
             const hintText = document.getElementById('user_type_hint');
 
-            // Hide all specialized field groups
             studentGroup.classList.add('hidden');
             parentGroup.classList.add('hidden');
             facultyGroup.classList.add('hidden');
             othersGroup.classList.add('hidden');
 
-            // Reset required flags on dynamic inputs
             document.getElementById('field_student_id').required = false;
             document.getElementById('field_college').required = false;
             document.getElementById('field_course').required = false;
@@ -1072,7 +1063,7 @@ HTML_TEMPLATE = """
                 parentGroup.classList.remove('hidden');
                 suffixGroup.classList.remove('hidden');
                 mnameInput.required = true;
-                mnameLabel.innerHTML = 'Middle Name <span class="text-rose-600">*</span>';
+                mnameLabel.innerHTML = 'Middle Name <span class="text-rose-400">*</span>';
                 document.getElementById('field_parent_address').required = true;
                 hintText.innerText = 'Parent registration: requires Surname, First Name, Middle Name, and Address. Suffix is optional.';
             } else if (type === 'Faculty') {
@@ -1096,58 +1087,56 @@ HTML_TEMPLATE = """
         function renderVisitor(v) {
             const avatar = document.getElementById('v-avatar');
             const presence = document.getElementById('v-presence');
-            const inBtn = document.getElementById('time-in-btn');
-            const outBtn = document.getElementById('time-out-btn');
             const avatarBase = 'w-14 h-14 shrink-0 rounded-2xl text-white flex items-center justify-center text-lg font-bold ';
 
             if (!v) {
                 setText('v-avatar', '--');
-                avatar.className = avatarBase + 'bg-slate-300';
+                avatar.className = avatarBase + 'bg-white/20';
                 setText('v-name', 'No visitor detected');
                 setText('v-id', 'Step in front of the camera');
                 presence.classList.add('hidden');
                 ['v-category', 'v-college', 'v-detail', 'v-last-action', 'v-last-time'].forEach(id => setText(id, '-'));
                 setText('v-detail-label', 'Course / Dept / Address');
-                inBtn.disabled = true;
-                outBtn.disabled = true;
                 return;
             }
 
             setText('v-avatar', v.initials);
-            avatar.className = avatarBase + 'bg-emerald-700';
+            avatar.className = avatarBase + 'bg-gradient-to-br from-fuchsia-500 to-purple-600';
             setText('v-name', v.name);
             setText('v-id', 'ID Number: ' + v.id);
             presence.classList.remove('hidden');
             presence.innerText = v.inside ? 'Timed In' : 'Timed Out';
             presence.className = 'shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border ' +
-                (v.inside ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200');
+                (v.inside ? 'bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/30' : 'bg-white/10 text-slate-300 border-white/10');
             setText('v-category', v.category);
             setText('v-college', v.college);
             setText('v-detail-label', v.detail_label);
             setText('v-detail', v.detail);
             setText('v-last-action', v.last_action || 'No record yet');
             setText('v-last-time', v.last_timestamp || '-');
-            inBtn.disabled = actionBusy || !v.can_time_in;
-            outBtn.disabled = actionBusy || !v.can_time_out;
         }
 
-        function applyStatus(data) {
+        function paintStatus(data) {
             const panel = document.getElementById('status-panel');
             panel.innerText = data.text;
             
-            let bgClass = 'bg-emerald-50/50', textClass = 'text-emerald-800', borderClass = 'border-emerald-900/10';
+            let bgClass = 'bg-white/5', textClass = 'text-fuchsia-200', borderClass = 'border-white/10';
             if (data.status === 'success') {
-                bgClass = 'bg-emerald-100/90'; textClass = 'text-emerald-950 font-bold'; borderClass = 'border-emerald-300';
+                bgClass = 'bg-fuchsia-500/30'; textClass = 'text-white font-bold'; borderClass = 'border-fuchsia-400/40';
             } else if (data.status === 'verifying') {
-                bgClass = 'bg-emerald-100/60 animate-pulse'; textClass = 'text-emerald-900 font-semibold'; borderClass = 'border-emerald-300';
+                bgClass = 'bg-fuchsia-500/20 animate-pulse'; textClass = 'text-fuchsia-100 font-semibold'; borderClass = 'border-fuchsia-400/40';
             } else if (data.status === 'error') {
-                bgClass = 'bg-rose-50'; textClass = 'text-rose-700 font-semibold'; borderClass = 'border-rose-200';
+                bgClass = 'bg-rose-500/10'; textClass = 'text-rose-300 font-semibold'; borderClass = 'border-rose-400/30';
             } else if (data.status === 'warning') {
-                bgClass = 'bg-amber-50'; textClass = 'text-amber-800 font-semibold'; borderClass = 'border-amber-200';
+                bgClass = 'bg-amber-400/10'; textClass = 'text-amber-200 font-semibold'; borderClass = 'border-amber-400/30';
             }
             
             panel.className = `rounded-xl border px-4 py-3 text-center text-sm font-medium transition-colors duration-300 ${bgClass} ${textClass} ${borderClass}`;
-            
+        }
+
+        function applyStatus(data) {
+            paintStatus(data);
+
             const regBtn = document.getElementById('register-btn');
             if (data.unknown_detected) {
                 regBtn.classList.remove('hidden');
@@ -1174,26 +1163,68 @@ HTML_TEMPLATE = """
             }
         }
 
+        function syncControls() {
+            [['Time In', 'time-in-btn'], ['Time Out', 'time-out-btn']].forEach(function (pair) {
+                const btn = document.getElementById(pair[1]);
+                const active = scanArmed && armedAction === pair[0];
+                btn.disabled = actionBusy;
+                btn.classList.toggle('scan-active', active);
+                btn.querySelector('span').innerText = active ? 'Scanning... tap to cancel' : pair[0];
+            });
+        }
+
+        function armScanner(action) {
+            if (actionBusy) return;
+            if (scanArmed && armedAction === action) {
+                disarmScanner();
+                return;
+            }
+            armedAction = action;
+            scanArmed = true;
+            armedAt = Date.now();
+            lastFaceTime = Date.now();
+            isCameraHidden = false;
+            document.getElementById('lock-container').classList.add('hidden');
+            document.getElementById('standby-container').classList.add('hidden');
+            renderVisitor(null);
+            paintStatus({ text: 'Scanner unlocked for ' + action + '. Face the camera.', status: 'verifying' });
+            syncControls();
+            analyzeLoop();
+        }
+
+        function disarmScanner(text, status) {
+            scanArmed = false;
+            armedAction = null;
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            document.getElementById('standby-container').classList.add('hidden');
+            document.getElementById('lock-container').classList.remove('hidden');
+            paintStatus({ text: text || LOCKED_TEXT, status: status || 'normal' });
+            syncControls();
+        }
+
         async function recordAttendance(action) {
             if (actionBusy) return;
             actionBusy = true;
-            document.getElementById('time-in-btn').disabled = true;
-            document.getElementById('time-out-btn').disabled = true;
+            syncControls();
 
             const body = new FormData();
             body.append('client_id', clientId);
             body.append('action', action);
 
+            let ok = false;
+            let message = '';
             try {
                 const res = await fetch('/attendance', { method: 'POST', body: body });
                 const data = await res.json().catch(() => ({}));
-                const ok = res.ok && data.success !== false;
-                showToast(data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.'), ok ? 'success' : 'error');
+                ok = res.ok && data.success !== false;
+                message = data.message || (ok ? action + ' recorded.' : 'Could not record ' + action + '. Please try again.');
             } catch (e) {
-                showToast('An unexpected network error occurred. Please try again.', 'error');
-            } finally {
-                actionBusy = false;
+                message = 'An unexpected network error occurred. Please try again.';
             }
+            showToast(message, ok ? 'success' : 'error');
+            actionBusy = false;
+            disarmScanner(message, ok ? 'success' : 'error');
         }
 
         const clientId = (function () {
@@ -1211,7 +1242,7 @@ HTML_TEMPLATE = """
         const sampler = document.createElement('canvas');
         const ANALYZE_INTERVAL_MS = 450;
         const SAMPLE_WIDTH = 960;
-        const BOX_COLORS = { green: '#22c55e', red: '#e11d48', amber: '#f59e0b' };
+        const BOX_COLORS = { green: '#e879f9', red: '#fb7185', amber: '#fde047' };
 
         function showCameraError(message) {
             document.getElementById('status-panel').innerText = message;
@@ -1231,13 +1262,11 @@ HTML_TEMPLATE = """
                 video.srcObject = stream;
                 await video.play();
 
-                // Some webcams start digitally zoomed in; drop to the widest field of view they allow
                 try {
                     const track = stream.getVideoTracks()[0];
                     const caps = track.getCapabilities ? track.getCapabilities() : {};
                     if (caps.zoom) await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
                 } catch (e) {}
-                analyzeLoop();
             } catch (err) {
                 if (err && err.name === 'NotAllowedError') {
                     showCameraError('Camera permission was denied. Allow camera access and reload the page.');
@@ -1270,27 +1299,51 @@ HTML_TEMPLATE = """
 
         async function sendFrame() {
             const blob = await captureFrame();
-            if (!blob) return;
+            if (!blob || !scanArmed) return;
 
             const body = new FormData();
             body.append('client_id', clientId);
             body.append('frame', blob, 'frame.jpg');
 
             const res = await fetch('/analyze', { method: 'POST', body: body });
-            if (!res.ok) return;
+            if (!res.ok || !scanArmed) return;
 
             const data = await res.json();
+            if (!scanArmed) return;
             applyStatus(data);
             drawOverlay(data.boxes || (data.box ? [data.box] : []));
+
+            const v = data.visitor;
+            if (!actionBusy && v && v.verified && !v.cooling) {
+                const allowed = armedAction === 'Time In' ? v.can_time_in : v.can_time_out;
+                if (allowed) {
+                    recordAttendance(armedAction);
+                } else {
+                    const msg = armedAction === 'Time In' ? v.name + ' is already timed in.' : v.name + ' is not timed in yet.';
+                    showToast(msg, 'warning');
+                    disarmScanner(msg, 'warning');
+                }
+            }
         }
 
         async function analyzeLoop() {
-            while (true) {
+            if (scanLoopRunning) return;
+            scanLoopRunning = true;
+            while (scanArmed) {
+                if (!registering && Date.now() - armedAt > SCAN_WINDOW_MS) {
+                    const msg = 'Scan timed out. Press Time In or Time Out to try again.';
+                    showToast(msg, 'warning');
+                    disarmScanner(msg, 'warning');
+                    break;
+                }
                 const started = Date.now();
-                try { await sendFrame(); } catch (e) {}
+                if (!registering && !actionBusy) {
+                    try { await sendFrame(); } catch (e) {}
+                }
                 const wait = Math.max(0, ANALYZE_INTERVAL_MS - (Date.now() - started));
                 await new Promise(resolve => setTimeout(resolve, wait));
             }
+            scanLoopRunning = false;
         }
 
         function drawOverlay(boxes) {
@@ -1320,7 +1373,7 @@ HTML_TEMPLATE = """
             ctx.strokeRect(x, y, bw, bh);
 
             if (box.progress !== null && box.progress !== undefined) {
-                ctx.fillStyle = 'rgba(40, 40, 40, 0.9)';
+                ctx.fillStyle = 'rgba(20, 8, 36, 0.9)';
                 ctx.fillRect(x, y + bh + 8, bw, 7);
                 ctx.fillStyle = color;
                 ctx.fillRect(x, y + bh + 8, bw * box.progress, 7);
@@ -1361,7 +1414,7 @@ HTML_TEMPLATE = """
 
             const hint = document.getElementById('capture-hint');
             hint.innerText = 'Face the camera in good light, then press Capture Photo.';
-            hint.className = 'mt-2 text-[11px] font-medium text-emerald-800/80';
+            hint.className = 'mt-2 text-[11px] font-medium text-fuchsia-200/80';
             setSubmitEnabled();
         }
 
@@ -1396,7 +1449,7 @@ HTML_TEMPLATE = """
 
                 const hint = document.getElementById('capture-hint');
                 hint.innerText = 'Photo captured. If your face is not clear, press Retake.';
-                hint.className = 'mt-2 text-[11px] font-semibold text-emerald-800';
+                hint.className = 'mt-2 text-[11px] font-semibold text-fuchsia-200';
                 setSubmitEnabled();
             } catch (e) {
                 showToast('A network error occurred while checking the photo. Please try again.', 'error');
@@ -1411,6 +1464,7 @@ HTML_TEMPLATE = """
         }
 
         function openModal() {
+            registering = true;
             document.getElementById('cancel-confirm-box').classList.add('hidden');
             regVideo.srcObject = video.srcObject;
             regVideo.play().catch(() => {});
@@ -1419,6 +1473,8 @@ HTML_TEMPLATE = """
         }
 
         function hideModal() {
+            registering = false;
+            armedAt = Date.now();
             document.getElementById('reg-modal').classList.add('hidden');
             document.getElementById('reg-form').reset();
             handleUserTypeChange('Student');
@@ -1492,9 +1548,7 @@ HTML_TEMPLATE = """
 def index():
     return redirect(url_for('login_page'))
 
-# ==================== New Login and Guard Routes ====================
 
-# Login page HTML template with two large buttons
 LOGIN_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1502,41 +1556,57 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GuardGate Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         html, body {height: 100%; width: 100%; margin: 0; overflow: hidden;}
-        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%);}
+        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: transparent;}
         .app-root {height: 100vh; height: 100dvh; width: 100vw; overflow: hidden;}
+    
+        html{background:#06020d}
+        body{background:transparent!important;color:#f3e8ff}
+        body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(55rem 38rem at 8% -8%,rgba(217,70,239,.38),transparent 62%),radial-gradient(48rem 38rem at 100% 12%,rgba(124,58,237,.38),transparent 62%),radial-gradient(46rem 34rem at 55% 118%,rgba(236,72,153,.30),transparent 62%),linear-gradient(180deg,#0a0316,#13061f)}
+        body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(232,121,249,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,.07) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 78%)}
+        .glass{background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.03));-webkit-backdrop-filter:blur(24px) saturate(170%);backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 0 1px rgba(217,70,239,.10),0 24px 70px -24px rgba(168,85,247,.65),inset 0 1px 0 rgba(255,255,255,.16)}
+        .glass-strong{background:linear-gradient(145deg,rgba(40,16,66,.94),rgba(18,7,32,.96));-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(232,121,249,.28);box-shadow:0 0 38px -6px rgba(217,70,239,.45),0 30px 80px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.14)}
+        .neon-text{background:linear-gradient(90deg,#f5d0fe,#e879f9 45%,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px rgba(232,121,249,.55))}
+        h1,h2{font-family:'Orbitron','Plus Jakarta Sans',sans-serif;letter-spacing:.03em}
+        html input,html select,html textarea{color:#fff;color-scheme:dark;background-color:rgba(255,255,255,.06)}
+        input::placeholder,textarea::placeholder{color:rgba(255,255,255,.35)}
+        select option{background:#1a0a2e;color:#fff}
+        html input:focus,html select:focus{box-shadow:0 0 0 3px rgba(217,70,239,.25),0 0 18px rgba(217,70,239,.35)}
+        .from-fuchsia-500.to-purple-600{filter:drop-shadow(0 0 10px rgba(217,70,239,.55))}
+        button:disabled{filter:none!important}
+        .scan-active{box-shadow:0 0 0 2px rgba(244,114,182,.9),0 0 28px rgba(244,114,182,.7)!important;animation:neon-pulse 1.6s ease-in-out infinite}
+        @keyframes neon-pulse{50%{box-shadow:0 0 0 2px rgba(244,114,182,.9),0 0 44px rgba(232,121,249,.95)}}
+        @media (prefers-reduced-motion:reduce){.scan-active{animation:none}}
+        *{scrollbar-width:thin;scrollbar-color:rgba(217,70,239,.5) transparent}
     </style>
 </head>
-<body class="text-slate-800 antialiased overflow-hidden">
+<body class="text-slate-100 antialiased overflow-hidden">
     <div class="app-root flex items-center justify-center p-4">
-        <div class="w-full max-w-sm max-h-full overflow-y-auto bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 p-6 sm:p-8 text-center">
-            <div class="mx-auto w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-800/15 mb-4">
+        <div class="w-full max-w-sm max-h-full overflow-y-auto rounded-2xl p-6 sm:p-8 text-center glass">
+            <div class="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-fuchsia-500/40 mb-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
             </div>
-            <h1 class="text-2xl font-bold text-emerald-950 tracking-tight">GuardGate</h1>
-            <p class="text-xs text-emerald-900/60 font-medium mt-1 mb-6">Select how you want to continue</p>
+            <h1 class="text-2xl font-bold neon-text tracking-tight">GuardGate</h1>
+            <p class="text-xs text-fuchsia-200/60 font-medium mt-1 mb-6">Select how you want to continue</p>
             <div class="flex flex-col gap-3">
-                <a href="{{ url_for('scanner') }}" class="block bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold py-3 px-6 rounded-xl shadow-sm transition-colors">Student</a>
-                <a href="{{ url_for('guard_login') }}" class="block bg-white hover:bg-emerald-50 text-emerald-900 text-sm font-semibold py-3 px-6 rounded-xl border border-emerald-200 shadow-sm transition-colors">Guard</a>
+                <a href="{{ url_for('scanner') }}" class="block bg-gradient-to-br from-fuchsia-500 to-purple-600 hover:brightness-110 text-white text-sm font-semibold py-3 px-6 rounded-xl shadow-sm transition-colors">Student</a>
+                <a href="{{ url_for('guard_login') }}" class="block bg-white/[0.06] hover:bg-white/10 text-fuchsia-100 text-sm font-semibold py-3 px-6 rounded-xl border border-fuchsia-400/30 shadow-sm transition-colors">Guard</a>
             </div>
         </div>
     </div>
 </body>
 </html>"""
 
-# Scanner route (previous home page)
 @app.route('/scanner')
 def scanner():
     return render_template_string(HTML_TEMPLATE)
 
-# Login page route
 @app.route('/login')
 def login_page():
     return render_template_string(LOGIN_TEMPLATE)
 
-# Guard login form template
 GUARD_LOGIN_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1544,37 +1614,55 @@ GUARD_LOGIN_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guard Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         html, body {height: 100%; width: 100%; margin: 0; overflow: hidden;}
-        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%);}
+        body {font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: transparent;}
         .app-root {height: 100vh; height: 100dvh; width: 100vw; overflow: hidden;}
+    
+        html{background:#06020d}
+        body{background:transparent!important;color:#f3e8ff}
+        body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(55rem 38rem at 8% -8%,rgba(217,70,239,.38),transparent 62%),radial-gradient(48rem 38rem at 100% 12%,rgba(124,58,237,.38),transparent 62%),radial-gradient(46rem 34rem at 55% 118%,rgba(236,72,153,.30),transparent 62%),linear-gradient(180deg,#0a0316,#13061f)}
+        body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(232,121,249,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,.07) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 78%)}
+        .glass{background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.03));-webkit-backdrop-filter:blur(24px) saturate(170%);backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 0 1px rgba(217,70,239,.10),0 24px 70px -24px rgba(168,85,247,.65),inset 0 1px 0 rgba(255,255,255,.16)}
+        .glass-strong{background:linear-gradient(145deg,rgba(40,16,66,.94),rgba(18,7,32,.96));-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(232,121,249,.28);box-shadow:0 0 38px -6px rgba(217,70,239,.45),0 30px 80px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.14)}
+        .neon-text{background:linear-gradient(90deg,#f5d0fe,#e879f9 45%,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px rgba(232,121,249,.55))}
+        h1,h2{font-family:'Orbitron','Plus Jakarta Sans',sans-serif;letter-spacing:.03em}
+        html input,html select,html textarea{color:#fff;color-scheme:dark;background-color:rgba(255,255,255,.06)}
+        input::placeholder,textarea::placeholder{color:rgba(255,255,255,.35)}
+        select option{background:#1a0a2e;color:#fff}
+        html input:focus,html select:focus{box-shadow:0 0 0 3px rgba(217,70,239,.25),0 0 18px rgba(217,70,239,.35)}
+        .from-fuchsia-500.to-purple-600{filter:drop-shadow(0 0 10px rgba(217,70,239,.55))}
+        button:disabled{filter:none!important}
+        .scan-active{box-shadow:0 0 0 2px rgba(244,114,182,.9),0 0 28px rgba(244,114,182,.7)!important;animation:neon-pulse 1.6s ease-in-out infinite}
+        @keyframes neon-pulse{50%{box-shadow:0 0 0 2px rgba(244,114,182,.9),0 0 44px rgba(232,121,249,.95)}}
+        @media (prefers-reduced-motion:reduce){.scan-active{animation:none}}
+        *{scrollbar-width:thin;scrollbar-color:rgba(217,70,239,.5) transparent}
     </style>
 </head>
-<body class="text-slate-800 antialiased overflow-hidden">
+<body class="text-slate-100 antialiased overflow-hidden">
     <div class="app-root flex items-center justify-center p-4">
-        <div class="w-full max-w-sm max-h-full overflow-y-auto bg-white rounded-2xl shadow-lg shadow-emerald-900/5 border border-emerald-900/10 p-6 sm:p-8">
-            <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors mb-5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
-            <h2 class="text-2xl font-bold text-emerald-950 tracking-tight">Guard Login</h2>
-            <p class="text-xs text-emerald-900/60 font-medium mt-1 mb-6">Sign in to open the admin station</p>
-            {% if error %}<p class="mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium px-3 py-2">{{ error }}</p>{% endif %}
+        <div class="w-full max-w-sm max-h-full overflow-y-auto rounded-2xl p-6 sm:p-8 glass">
+            <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-fuchsia-200 hover:text-white bg-white/5 hover:bg-white/10 border border-fuchsia-400/30 px-3 py-1.5 rounded-lg transition-colors mb-5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
+            <h2 class="text-2xl font-bold text-white tracking-tight">Guard Login</h2>
+            <p class="text-xs text-fuchsia-200/60 font-medium mt-1 mb-6">Sign in to open the admin station</p>
+            {% if error %}<p class="mb-4 rounded-lg bg-rose-500/10 border border-rose-400/30 text-rose-300 text-xs font-medium px-3 py-2">{{ error }}</p>{% endif %}
             <form method="POST" action="{{ url_for('guard_login') }}" class="space-y-4">
                 <div>
-                    <label for="username" class="block text-xs font-semibold text-slate-700 mb-1.5">Username</label>
-                    <input id="username" type="text" name="username" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"/>
+                    <label for="username" class="block text-xs font-semibold text-slate-200 mb-1.5">Username</label>
+                    <input id="username" type="text" name="username" required class="w-full border border-white/15 rounded-xl px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400"/>
                 </div>
                 <div>
-                    <label for="password" class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
-                    <input id="password" type="password" name="password" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"/>
+                    <label for="password" class="block text-xs font-semibold text-slate-200 mb-1.5">Password</label>
+                    <input id="password" type="password" name="password" required class="w-full border border-white/15 rounded-xl px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400"/>
                 </div>
-                <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold py-2.5 rounded-xl shadow-sm transition-colors">Login</button>
+                <button type="submit" class="w-full bg-gradient-to-br from-fuchsia-500 to-purple-600 hover:brightness-110 text-white text-sm font-semibold py-2.5 rounded-xl shadow-sm transition-colors">Login</button>
             </form>
         </div>
     </div>
 </body>
 </html>"""
 
-# Guard login handling
 @app.route('/guard_login', methods=['GET', 'POST'])
 def guard_login():
     if request.method == 'POST':
@@ -1587,13 +1675,11 @@ def guard_login():
             return render_template_string(GUARD_LOGIN_TEMPLATE, error='Invalid credentials')
     return render_template_string(GUARD_LOGIN_TEMPLATE)
 
-# Logout route
 @app.route('/logout')
 def logout():
     session.pop('is_guard', None)
     return redirect(url_for('login_page'))
 
-# ==================== End New Routes ====================
 
 def face_problem(frame):
     boxes = detect_faces(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
@@ -1729,7 +1815,7 @@ def register():
             college = "Others"
             course = address
 
-        else:  # Student
+        else:
             student_id = request.form.get('student_id', '').strip()
             college = request.form.get('college', '').strip()
             program = request.form.get('course', '').strip().upper()
@@ -1742,7 +1828,6 @@ def register():
 
             course = f"{program} - Year {year_level}"
 
-        # 1. Manual check kung existing na ang ID
         existing_check = supabase.table("visitors").select("student_id").eq("student_id", student_id).execute()
         if existing_check.data:
             return jsonify({"success": False, "message": "Already Exist"}), 400
@@ -1795,7 +1880,6 @@ def register():
         })
     except Exception as e:
         error_str = str(e)
-        # 2. Sisiguraduhing "Already Exist" ang lalabas kapag na-trigger ang unique key constraint
         if "duplicate key" in error_str.lower() or "visitors_pkey" in error_str.lower() or "already exists" in error_str.lower():
             return jsonify({"success": False, "message": "Already Exist"}), 400
             
