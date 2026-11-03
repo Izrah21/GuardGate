@@ -1,153 +1,196 @@
+import os
+import sys
 import logging
-from datetime import datetime, timezone, timedelta
-from flask import Blueprint, render_template_string, jsonify, session, redirect, url_for
+from flask import Blueprint, render_template_string, request, jsonify, session, redirect, url_for
 from supabase import create_client, Client
 
-guard_bp = Blueprint('guard_bp', __name__)
+admin_bp = Blueprint('admin_bp', __name__)
 
 SUPABASE_URL = "https://qciehqzajzaejhsjzrdm.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjaWVocXphanphZWpoc2p6cmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODQwNDksImV4cCI6MjEwNDY2MDA0OX0.0An1BSRjssOI7SliI1lC3jkMo14XVHbUnfXFt015Uyo"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-PH_TZ = timezone(timedelta(hours=8))
-CURFEW_HOUR = 20
-MAX_ROWS = 20000
-LOG_FORMATS = ("%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p")
-
-GUARD_TEMPLATE = """<!DOCTYPE html>
+ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guard Station</title>
+    <title>Dormitory Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%); }
-        .pulse-alert { animation: alert-pulse 1.4s ease-in-out infinite; }
-        @keyframes alert-pulse { 50% { box-shadow: 0 0 0 1px rgba(244,63,94,.8), 0 0 42px rgba(244,63,94,.65); } }
-        @media (prefers-reduced-motion: reduce) { .pulse-alert { animation: none; } }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%); }
     </style>
-</head>
-<body class="text-slate-800 antialiased min-h-screen p-4 sm:p-6">
-    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
+    <script>
+        function toggleNavMenu(event) {
+            event.stopPropagation();
+            const panel = document.getElementById('nav-menu-panel');
+            const open = panel.classList.toggle('hidden') === false;
+            document.getElementById('nav-menu-btn').setAttribute('aria-expanded', String(open));
+        }
 
-    <div class="max-w-6xl mx-auto space-y-5">
-        <header class="bg-white border border-emerald-900/10 shadow-sm relative z-30 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        function closeNavMenu() {
+            const panel = document.getElementById('nav-menu-panel');
+            if (panel) {
+                panel.classList.add('hidden');
+                document.getElementById('nav-menu-btn').setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#nav-menu-panel') && !e.target.closest('#nav-menu-btn')) closeNavMenu();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeNavMenu();
+        });
+    </script>
+</head>
+<body class="text-slate-800 p-6 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-6 bg-white p-5 rounded-2xl shadow-sm border border-emerald-900/10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 </div>
-                <div class="min-w-0">
-                    <h1 class="text-xl sm:text-2xl font-bold text-emerald-950 leading-tight">Guard Station</h1>
-                    <p class="text-xs text-slate-500 truncate">Dormitory visitor logs and curfew watch</p>
+                <div>
+                    <h1 class="text-xl font-bold text-emerald-950">Dormitory Admin Dashboard</h1>
+                    <p class="text-xs text-slate-500">Real-time occupancy and visitor management</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3 shrink-0">
-                <div class="hidden sm:block text-right">
-                    <p id="clock" class="text-sm font-bold text-slate-900">--:--:--</p>
-                    <p class="text-[11px] text-slate-500">Curfew <span id="curfew-label">8:00 PM</span></p>
-                </div>
-                <button id="sound-btn" type="button" onclick="toggleSound()" class="px-3 py-2 text-xs font-semibold text-emerald-800 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition">Sound off</button>
-                <div class="relative">
-                    <button id="nav-menu-btn" type="button" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    </button>
-                    <div id="nav-menu-panel" role="menu" class="hidden absolute right-0 top-12 mt-2 w-56 bg-white border border-slate-200 shadow-xl rounded-xl py-1.5 z-50 overflow-hidden">
-                        <a href="/scanner" role="menuitem" class="block px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">Student Scanner</a>
-                        <a href="/admin-login" role="menuitem" class="block px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">Admin Dashboard</a>
-                        <div class="my-1.5 border-t border-slate-200"></div>
-                        <a href="/logout" role="menuitem" class="block px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors">Logout</a>
-                    </div>
+
+            <div class="relative shrink-0 flex items-center gap-3">
+                <button type="button" id="nav-menu-btn" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="nav-menu-panel" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center shadow-sm border border-emerald-900/20 transition focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div id="nav-menu-panel" role="menu" class="hidden absolute right-0 top-12 mt-2 w-56 bg-white rounded-xl shadow-xl shadow-slate-900/10 border border-slate-200 py-1.5 z-40">
+                    <p class="px-4 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Navigate</p>
+                    <a href="/guard" role="menuitem" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">
+                        <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        Guard Station
+                    </a>
+                    <a href="/scanner" role="menuitem" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors">
+                        <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Student Scanner
+                    </a>
+                    <div class="my-1.5 border-t border-slate-100"></div>
+                    <a href="/admin-logout" role="menuitem" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors">
+                        <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        Logout
+                    </a>
                 </div>
             </div>
         </header>
 
-        <section id="alert-banner" class="hidden bg-rose-50 pulse-alert rounded-2xl p-5 border border-rose-300 shadow-lg" role="alert">
-            <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 border border-rose-300 flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <h2 id="alert-title" class="text-sm font-bold text-rose-700"></h2>
-                    <p class="text-xs text-rose-700/80 mt-1">These visitors are still timed in after the 8:00 PM curfew. Please check on them.</p>
-                    <ul id="alert-list" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2"></ul>
-                </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-900/10 mb-6">
+            <h2 class="text-sm font-bold text-emerald-950 mb-4 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                Real-time: Who Is Inside the Dormitory (Per College)
+            </h2>
+            <div class="w-full h-64 flex justify-center">
+                <canvas id="dormChart"></canvas>
             </div>
-        </section>
+        </div>
 
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white border border-emerald-900/10 shadow-sm rounded-2xl p-5">
-                <p class="text-xs font-semibold text-slate-500">Inside now</p>
-                <p id="stat-inside" class="mt-1 text-3xl font-bold text-slate-900">0</p>
-            </div>
-            <div class="bg-white border border-emerald-900/10 shadow-sm rounded-2xl p-5">
-                <p class="text-xs font-semibold text-slate-500">Past 8:00 PM</p>
-                <p id="stat-overdue" class="mt-1 text-3xl font-bold text-rose-600">0</p>
-            </div>
-            <div class="bg-white border border-emerald-900/10 shadow-sm rounded-2xl p-5">
-                <p class="text-xs font-semibold text-slate-500">Total entries logged</p>
-                <p id="stat-entries" class="mt-1 text-3xl font-bold text-slate-900">0</p>
-            </div>
-        </section>
-
-        <section class="grid grid-cols-1 lg:grid-cols-5 gap-5">
-            <div class="bg-white border border-emerald-900/10 shadow-sm rounded-2xl p-5 lg:col-span-3 min-w-0">
-                <h2 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                    Currently inside the dormitory
-                </h2>
-                <div class="max-h-80 overflow-y-auto">
-                    <ul id="inside-list" class="space-y-2"></ul>
-                </div>
-            </div>
-            <div class="bg-white border border-emerald-900/10 shadow-sm rounded-2xl p-5 lg:col-span-2 min-w-0">
-                <h2 class="text-sm font-bold text-slate-900 mb-4">Visit frequency</h2>
-                <div class="max-h-80 overflow-y-auto">
-                    <ul id="frequency-list" class="space-y-2"></ul>
-                </div>
-            </div>
-        </section>
-
-        <section class="bg-white border border-emerald-900/10 shadow-sm rounded-2xl p-5">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                <h2 class="text-sm font-bold text-slate-900">Visitor logs</h2>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <input id="search-input" type="text" oninput="renderLogs()" placeholder="Search name or ID" class="w-full sm:w-64 border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-emerald-600">
-                    <select id="filter-select" onchange="renderLogs()" class="border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-emerald-600 cursor-pointer">
-                        <option value="all">All records</option>
-                        <option value="Time In">Time In</option>
-                        <option value="Time Out">Time Out</option>
-                        <option value="inside">Still inside</option>
-                        <option value="overdue">Past 8:00 PM</option>
-                    </select>
-                </div>
-            </div>
-            <div class="overflow-x-auto max-h-[28rem] overflow-y-auto">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-900/10">
+            <h2 class="text-sm font-bold text-emerald-950 mb-4">Manage Visitors</h2>
+            <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead>
-                        <tr class="border-b border-slate-200 text-slate-400 font-semibold">
+                        <tr class="border-b border-slate-100 text-slate-400 uppercase font-semibold">
                             <th class="p-3">ID Number</th>
                             <th class="p-3">Full Name</th>
                             <th class="p-3">Category / College</th>
-                            <th class="p-3">Action</th>
-                            <th class="p-3">Timestamp</th>
+                            <th class="p-3">Course / Details</th>
+                            <th class="p-3">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="logs-tbody"></tbody>
+                    <tbody id="visitors-tbody"></tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </div>
 
+    <div id="delete-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="delete-modal-title" aria-describedby="delete-modal-message" onmousedown="if (event.target === this) closeDeleteModal()">
+        <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-sm overflow-hidden border border-slate-200">
+            <div class="px-6 pt-6 pb-5 flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </div>
+                <div class="min-w-0">
+                    <h3 id="delete-modal-title" class="text-sm font-bold text-slate-900">Delete this visitor?</h3>
+                    <p id="delete-modal-message" class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                        <span id="delete-modal-name" class="font-semibold text-slate-700 break-words"></span> will be permanently removed, including their logs and stored face image. This cannot be undone.
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button type="button" id="delete-cancel-btn" onclick="closeDeleteModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition shadow-sm">Cancel</button>
+                <button type="button" id="delete-ok-btn" onclick="confirmDeleteVisitor()" class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 focus:ring-4 focus:ring-rose-500/20 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="hidden"></div>
+
     <script>
-        let dashboard = { inside: [], logs: [], frequency: [], total_entries: 0 };
-        let knownOverdue = null;
-        let soundOn = false;
-        let audioCtx = null;
-        const baseTitle = document.title;
+        let dormChart = null;
+
+        function loadDashboardData() {
+            fetch('/api/admin/stats')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('visitors-tbody');
+                    tbody.innerHTML = '';
+                    if (data.visitors.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No visitors found.</td></tr>`;
+                        return;
+                    }
+                    data.visitors.forEach(v => {
+                        tbody.innerHTML += `
+                            <tr class="border-b border-slate-100 hover:bg-emerald-50/30 transition-colors">
+                                <td class="p-3 font-semibold text-slate-900">${v.student_id}</td>
+                                <td class="p-3 font-medium">${v.normalized_name}</td>
+                                <td class="p-3"><span class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">${v.college}</span></td>
+                                <td class="p-3 text-slate-600">${v.course_year || '-'}</td>
+                                <td class="p-3 flex gap-2">
+                                    <button type="button" data-id="${escapeHtml(v.student_id)}" data-name="${escapeHtml(v.normalized_name)}" onclick="requestDeleteVisitor(this)" class="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-lg font-medium hover:bg-rose-100 transition">Delete</button>
+                                </td>
+                            </tr>`;
+                    });
+                    updateChart(data.inside_count);
+                }).catch(() => {});
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('dormChart').getContext('2d');
+            dormChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE', 'Others'],
+                    datasets: [{
+                        label: 'Currently Inside',
+                        data: Array(11).fill(0),
+                        backgroundColor: '#047857',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function updateChart(counts) {
+            if (!dormChart) return;
+            dormChart.data.datasets[0].data = [
+                counts.CCIS || 0, counts.CAS || 0, counts.COE || 0, counts.CBEA || 0,
+                counts.CAFSD || 0, counts.CHS || 0, counts.COL || 0, counts.CASAT || 0,
+                counts.CIT || 0, counts.CTE || 0, counts.Others || 0
+            ];
+            dormChart.update();
+        }
+
+        let pendingDeleteId = null;
 
         function escapeHtml(value) {
             return String(value == null ? '' : value)
@@ -158,328 +201,203 @@ GUARD_TEMPLATE = """<!DOCTYPE html>
                 .replace(/'/g, '&#39;');
         }
 
-        function toggleNavMenu(event) {
-            event.stopPropagation();
-            const panel = document.getElementById('nav-menu-panel');
-            const open = panel.classList.toggle('hidden') === false;
-            document.getElementById('nav-menu-btn').setAttribute('aria-expanded', String(open));
+        function showToast(message, isError) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = 'fixed bottom-6 right-6 z-[70] px-4 py-3 rounded-xl shadow-lg text-xs font-semibold border ' +
+                (isError ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200');
+            toast.classList.remove('hidden');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.add('hidden'), 3500);
         }
 
-        function closeNavMenu() {
-            document.getElementById('nav-menu-panel').classList.add('hidden');
-            document.getElementById('nav-menu-btn').setAttribute('aria-expanded', 'false');
+        function requestDeleteVisitor(btn) {
+            pendingDeleteId = btn.dataset.id;
+            document.getElementById('delete-modal-name').innerText = btn.dataset.name || btn.dataset.id;
+            const ok = document.getElementById('delete-ok-btn');
+            ok.disabled = false;
+            ok.innerText = 'Delete';
+            document.getElementById('delete-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('delete-cancel-btn').focus(), 50);
         }
 
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#nav-menu-panel') && !e.target.closest('#nav-menu-btn')) closeNavMenu();
-        });
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            pendingDeleteId = null;
+        }
+
+        function confirmDeleteVisitor() {
+            if (!pendingDeleteId) return;
+            const id = pendingDeleteId;
+            const ok = document.getElementById('delete-ok-btn');
+            ok.disabled = true;
+            ok.innerText = 'Deleting...';
+            fetch('/api/admin/delete-visitor', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ student_id: id })
+            })
+            .then(r => r.json().then(res => ({ ok: r.ok, res })))
+            .then(({ ok, res }) => {
+                showToast(res.message, !ok);
+                loadDashboardData();
+            })
+            .catch(() => showToast('Failed to delete visitor. Please try again.', true))
+            .finally(closeDeleteModal);
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeNavMenu();
+            if (e.key === 'Escape') closeDeleteModal();
         });
-
-        function showToast(message, type) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const tone = type === 'error'
-                ? 'bg-rose-50 text-rose-700 border-rose-300 shadow-rose-900/5'
-                : 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-emerald-900/5';
-            toast.className = 'pointer-events-auto p-4 rounded-xl shadow-lg border backdrop-blur-xl text-xs font-semibold ' + tone;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 7000);
-        }
-
-        function toggleSound() {
-            soundOn = !soundOn;
-            document.getElementById('sound-btn').innerText = soundOn ? 'Sound on' : 'Sound off';
-            if (soundOn) {
-                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                beep();
-            }
-        }
-
-        function beep() {
-            if (!soundOn || !audioCtx) return;
-            [0, 0.28].forEach(function (offset) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.value = 880;
-                gain.gain.value = 0.08;
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(audioCtx.currentTime + offset);
-                osc.stop(audioCtx.currentTime + offset + 0.18);
-            });
-        }
-
-        function formatOver(minutes) {
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
-            return h > 0 ? h + 'h ' + m + 'm over' : m + 'm over';
-        }
-
-        function renderAlert() {
-            const overdue = dashboard.inside.filter(v => v.overdue);
-            const banner = document.getElementById('alert-banner');
-            document.title = overdue.length ? '(' + overdue.length + ') Curfew alert - Guard Station' : baseTitle;
-            if (!overdue.length) {
-                banner.classList.add('hidden');
-                return;
-            }
-            banner.classList.remove('hidden');
-            document.getElementById('alert-title').innerText = overdue.length === 1
-                ? '1 visitor is still inside past 8:00 PM'
-                : overdue.length + ' visitors are still inside past 8:00 PM';
-            document.getElementById('alert-list').innerHTML = overdue.map(v => `
-                <li class="flex items-center justify-between gap-3 rounded-xl bg-rose-50 border border-rose-200 px-3 py-2">
-                    <div class="min-w-0">
-                        <p class="text-xs font-bold text-slate-900 truncate">${escapeHtml(v.name)}</p>
-                        <p class="text-[11px] text-rose-700/80 truncate">${escapeHtml(v.student_id)} | in at ${escapeHtml(v.time_in)}</p>
-                    </div>
-                    <span class="shrink-0 text-[11px] font-bold text-rose-700">${escapeHtml(formatOver(v.minutes_over))}</span>
-                </li>`).join('');
-        }
-
-        function notifyNewOverdue() {
-            const current = new Set(dashboard.inside.filter(v => v.overdue).map(v => v.student_id));
-            if (knownOverdue !== null) {
-                const fresh = dashboard.inside.filter(v => v.overdue && !knownOverdue.has(v.student_id));
-                if (fresh.length) {
-                    fresh.forEach(v => showToast(v.name + ' is still inside past 8:00 PM.', 'error'));
-                    beep();
-                }
-            }
-            knownOverdue = current;
-        }
-
-        function renderStats() {
-            document.getElementById('stat-inside').innerText = dashboard.inside.length;
-            document.getElementById('stat-overdue').innerText = dashboard.inside.filter(v => v.overdue).length;
-            document.getElementById('stat-entries').innerText = dashboard.total_entries;
-        }
-
-        function renderInside() {
-            const list = document.getElementById('inside-list');
-            if (!dashboard.inside.length) {
-                list.innerHTML = '<li class="p-6 text-center text-xs text-slate-400">Nobody is inside right now.</li>';
-                return;
-            }
-            list.innerHTML = dashboard.inside.map(v => `
-                <li class="flex items-center justify-between gap-3 rounded-xl px-4 py-3 border ${v.overdue ? 'bg-rose-50 border-rose-300' : 'bg-slate-50 border-slate-200'}">
-                    <div class="min-w-0">
-                        <p class="text-sm font-semibold text-slate-900 truncate">${escapeHtml(v.name)}</p>
-                        <p class="text-[11px] text-slate-400 truncate">${escapeHtml(v.student_id)} | ${escapeHtml(v.college)} | in at ${escapeHtml(v.time_in)}</p>
-                    </div>
-                    <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full border ${v.overdue ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}">${v.overdue ? escapeHtml(formatOver(v.minutes_over)) : 'Inside'}</span>
-                </li>`).join('');
-        }
-
-        function renderFrequency() {
-            const list = document.getElementById('frequency-list');
-            if (!dashboard.frequency.length) {
-                list.innerHTML = '<li class="p-6 text-center text-xs text-slate-400">No entries recorded yet.</li>';
-                return;
-            }
-            const top = dashboard.frequency[0].count || 1;
-            list.innerHTML = dashboard.frequency.map(v => `
-                <li class="rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5">
-                    <div class="flex items-center justify-between gap-3">
-                        <p class="text-xs font-semibold text-slate-900 truncate">${escapeHtml(v.name)}</p>
-                        <span class="shrink-0 text-xs font-bold text-emerald-800">${v.count}</span>
-                    </div>
-                    <div class="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div class="h-full rounded-full bg-emerald-600" style="width:${Math.round(v.count / top * 100)}%"></div>
-                    </div>
-                </li>`).join('');
-        }
-
-        function renderLogs() {
-            const query = document.getElementById('search-input').value.trim().toLowerCase();
-            const filter = document.getElementById('filter-select').value;
-            const insideIds = new Set(dashboard.inside.map(v => v.log_id));
-            const overdueIds = new Set(dashboard.inside.filter(v => v.overdue).map(v => v.log_id));
-            const rows = dashboard.logs.filter(row => {
-                if (query && !(String(row.student_id).toLowerCase().includes(query) || String(row.name).toLowerCase().includes(query))) return false;
-                if (filter === 'Time In' || filter === 'Time Out') return row.action === filter;
-                if (filter === 'inside') return insideIds.has(row.id);
-                if (filter === 'overdue') return overdueIds.has(row.id);
-                return true;
-            });
-            const tbody = document.getElementById('logs-tbody');
-            if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">No matching records.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = rows.map(row => `
-                <tr class="border-b border-slate-200 hover:bg-emerald-50/30 transition-colors">
-                    <td class="p-3 font-semibold text-slate-900">${escapeHtml(row.student_id)}</td>
-                    <td class="p-3">${escapeHtml(row.name)}</td>
-                    <td class="p-3"><span class="bg-slate-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">${escapeHtml(row.college)}</span></td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-full font-semibold border ${row.action === 'Time In' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}">${escapeHtml(row.action)}</span></td>
-                    <td class="p-3 text-slate-600">${escapeHtml(row.timestamp)}</td>
-                </tr>`).join('');
-        }
-
-        function renderAll() {
-            renderStats();
-            renderAlert();
-            renderInside();
-            renderFrequency();
-            renderLogs();
-        }
-
-        function loadDashboard() {
-            fetch('/api/guard/dashboard')
-                .then(r => {
-                    if (r.status === 401) { window.location.href = '/guard_login'; return null; }
-                    return r.json();
-                })
-                .then(data => {
-                    if (!data) return;
-                    dashboard = data;
-                    document.getElementById('curfew-label').innerText = data.curfew_label;
-                    notifyNewOverdue();
-                    renderAll();
-                })
-                .catch(() => {});
-        }
-
-        function tickClock() {
-            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US');
-        }
 
         window.onload = () => {
-            tickClock();
-            setInterval(tickClock, 1000);
-            loadDashboard();
-            setInterval(loadDashboard, 10000);
+            initChart();
+            loadDashboardData();
+            setInterval(loadDashboardData, 5000);
         };
     </script>
 </body>
 </html>
 """
 
+ADMIN_LOGIN_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%); }</style>
+</head>
+<body class="flex items-center justify-center h-screen p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm border border-emerald-900/10">
+        <a href="/login" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors mb-5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>Back</a>
+        <div class="mx-auto w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h2 class="text-xl font-bold text-emerald-950 text-center mb-1">Admin Dashboard</h2>
+        <p class="text-xs text-slate-500 text-center mb-6">Sign in to manage dormitory records</p>
+        {% if error %}<p class="bg-rose-50 border border-rose-200 text-rose-700 text-xs px-3 py-2 rounded-lg mb-4 text-center font-medium">{{ error }}</p>{% endif %}
+        <form method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Username</label>
+                <input type="text" name="username" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                <input type="password" name="password" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+            </div>
+            <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold py-2.5 rounded-xl shadow-sm transition">Login</button>
+        </form>
+    </div>
+</body>
+</html>
+"""
 
-def parse_timestamp(value):
-    text = str(value or "").strip()
-    for fmt in LOG_FORMATS:
-        try:
-            return datetime.strptime(text, fmt)
-        except ValueError:
-            continue
-    return None
+@admin_bp.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if session.get('is_admin'):
+        return redirect(url_for('admin_bp.admin_dashboard'))
 
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        if username == 'mmsu@admin123' and password == 'adminMmsu':
+            session['is_admin'] = True
+            return redirect(url_for('admin_bp.admin_dashboard'))
+        else:
+            return render_template_string(ADMIN_LOGIN_TEMPLATE, error='Invalid credentials')
+            
+    return render_template_string(ADMIN_LOGIN_TEMPLATE)
 
-def pretty_name(raw):
-    parts = [p.strip() for p in (raw or "").split(",")]
-    parts = [p for p in parts if p and p.upper() != "N/A"]
-    if len(parts) <= 1:
-        return parts[0] if parts else (raw or "-")
-    return f"{parts[0]}, {' '.join(parts[1:])}"
+@admin_bp.route('/admin-logout')
+def admin_logout():
+    session.pop('is_admin', None)
+    return redirect(url_for('admin_bp.admin_login'))
 
+@admin_bp.route('/admin-dashboard')
+def admin_dashboard():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_bp.admin_login'))
+    return render_template_string(ADMIN_DASHBOARD_TEMPLATE)
 
-def fetch_all(table, columns, order_column, descending):
-    rows = []
-    offset = 0
-    page = 1000
-    while True:
-        batch = (
-            supabase.table(table)
-            .select(columns)
-            .order(order_column, desc=descending)
-            .range(offset, offset + page - 1)
-            .execute()
-            .data
-            or []
-        )
-        rows.extend(batch)
-        if len(batch) < page or len(rows) >= MAX_ROWS:
-            break
-        offset += page
-    return rows
-
-
-def format_time(value):
-    return value.strftime("%b %d, %I:%M %p").replace(" 0", " ")
-
-
-@guard_bp.route('/guard')
-def guard_page():
-    if not session.get('is_guard'):
-        return redirect(url_for('guard_login'))
-    return render_template_string(GUARD_TEMPLATE)
-
-
-@guard_bp.route('/api/guard/dashboard')
-def guard_dashboard():
-    if not session.get('is_guard'):
+@admin_bp.route('/api/admin/stats')
+def admin_stats():
+    if not session.get('is_admin'):
         return jsonify({"error": "Unauthorized"}), 401
+    
+    visitors = supabase.table("visitors").select("*").execute().data or []
+    inside_counts = {"CCIS": 0, "CAS": 0, "COE": 0, "CBEA": 0, "CAFSD": 0, "CHS": 0, "COL": 0, "CASAT": 0, "CIT": 0, "CTE": 0, "Others": 0}
+    
+    for v in visitors:
+        s_id = v["student_id"]
+        logs = supabase.table("logs").select("action").eq("student_id", s_id).order("id", desc=True).limit(1).execute().data
+        if logs and logs[0]["action"] == "Time In":
+            col = v.get("college", "Others")
+            if col in inside_counts:
+                inside_counts[col] += 1
+            else:
+                inside_counts["Others"] += 1
+
+    return jsonify({"visitors": visitors, "inside_count": inside_counts})
+
+def _face_file_name(visitor, student_id):
+    candidate = ""
+    if visitor:
+        image_path = (visitor.get("image_path") or "").split("?")[0]
+        candidate = os.path.basename(image_path.rstrip("/"))
+    if not candidate or candidate in (".", ".."):
+        candidate = f"{student_id}.jpg"
+    return os.path.basename(candidate)
+
+def _local_face_dir():
+    main_module = sys.modules.get("__main__")
+    return getattr(main_module, "FACE_DIR", "captured_faces")
+
+def _refresh_recognizer():
+    for name in ("__main__", "app"):
+        module = sys.modules.get(name)
+        loader = getattr(module, "load_recognizer_training", None)
+        if callable(loader):
+            loader()
+            return
+
+@admin_bp.route('/api/admin/delete-visitor', methods=['POST'])
+def admin_delete_visitor():
+    if not session.get('is_admin'):
+        return jsonify({"message": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    s_id = data.get('student_id')
+    if not s_id:
+        return jsonify({"message": "Missing student ID"}), 400
 
     try:
-        now = datetime.now(PH_TZ).replace(tzinfo=None)
-        logs = fetch_all("logs", "id,student_id,normalized_name,college,course_year,action,timestamp", "id", True)
+        rows = supabase.table("visitors").select("*").eq("student_id", s_id).execute().data or []
+        file_names = {_face_file_name(row, s_id) for row in rows} or {f"{s_id}.jpg"}
+        file_names.add(f"{s_id}.jpg")
+
+        supabase.storage.from_("faces").remove(sorted(file_names))
+
+        supabase.table("visitors").delete().eq("student_id", s_id).execute()
+        supabase.table("logs").delete().eq("student_id", s_id).execute()
     except Exception as e:
-        logging.error(f"Guard dashboard load error: {e}")
-        return jsonify({"error": "Could not load logs."}), 500
+        logging.exception("Failed to delete visitor %s", s_id)
+        return jsonify({"message": f"Error: {e}"}), 500
 
-    latest = {}
-    entries = {}
-    names = {}
-    for row in logs:
-        s_id = row["student_id"]
-        if s_id not in latest:
-            latest[s_id] = row
-            names[s_id] = pretty_name(row.get("normalized_name"))
-        if row["action"] == "Time In":
-            entries[s_id] = entries.get(s_id, 0) + 1
+    face_dir = _local_face_dir()
+    for name in file_names:
+        local_path = os.path.join(face_dir, name)
+        try:
+            if os.path.isfile(local_path):
+                os.remove(local_path)
+        except OSError:
+            logging.exception("Failed to remove local face image %s", local_path)
 
-    inside = []
-    for s_id, row in latest.items():
-        if row["action"] != "Time In":
-            continue
-        time_in = parse_timestamp(row["timestamp"])
-        overdue = False
-        minutes_over = 0
-        if time_in is not None:
-            curfew = time_in.replace(hour=CURFEW_HOUR, minute=0, second=0, microsecond=0)
-            if now > curfew:
-                overdue = True
-                minutes_over = int((now - curfew).total_seconds() // 60)
-        inside.append({
-            "log_id": row["id"],
-            "student_id": s_id,
-            "name": names[s_id],
-            "college": row.get("college") or "-",
-            "time_in": format_time(time_in) if time_in else str(row["timestamp"]),
-            "overdue": overdue,
-            "minutes_over": minutes_over,
-        })
-    inside.sort(key=lambda v: (not v["overdue"], -v["minutes_over"], v["name"]))
+    try:
+        _refresh_recognizer()
+    except Exception:
+        logging.exception("Failed to refresh recognizer after deleting %s", s_id)
 
-    frequency = sorted(
-        ({"student_id": s_id, "name": names.get(s_id, s_id), "count": count} for s_id, count in entries.items()),
-        key=lambda v: (-v["count"], v["name"]),
-    )
-
-    recent = [
-        {
-            "id": row["id"],
-            "student_id": row["student_id"],
-            "name": pretty_name(row.get("normalized_name")),
-            "college": row.get("college") or "-",
-            "action": row["action"],
-            "timestamp": row["timestamp"],
-        }
-        for row in logs[:300]
-    ]
-
-    return jsonify({
-        "inside": inside,
-        "logs": recent,
-        "frequency": frequency,
-        "total_entries": sum(entries.values()),
-        "curfew_label": "8:00 PM",
-    })
+    return jsonify({"message": "Visitor and face image successfully deleted."})
