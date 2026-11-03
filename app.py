@@ -47,14 +47,14 @@ SYNC_INTERVAL = 5
 sync_lock = threading.Lock()
 
 # Timer delay configuration (2.5 seconds hold before triggering Time In/Out)
-VERIFICATION_DELAY = 2.5
+VERIFICATION_DELAY = 0.5
 COOLDOWN_SECONDS = 3
 ATTENDANCE_GRACE = 2.0
 FACE_LOST_RESET = 1.5
 
 # Recognition tuning. LBPH returns a distance: LOWER = better match.
 # The old value (100) accepted almost any face, so the first registered visitor "won" for everyone.
-MATCH_THRESHOLD = 42       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
+MATCH_THRESHOLD = 50       # a face is only accepted if its best distance is BELOW this (typical true match: 30-50)
 MATCH_MARGIN = 10          # with 2+ people enrolled, the runner-up must be at least this much farther away
 DEBUG_CONFIDENCE = True   # set True to print each prediction's distance while tuning MATCH_THRESHOLD
 FACE_SIZE = 200
