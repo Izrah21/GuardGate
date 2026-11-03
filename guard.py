@@ -42,7 +42,6 @@ HTML_GUARD_STATION = """
             return String(v === null || v === undefined ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        // Custom non-blocking toast notifications (Eliminates 'localhost says')
         function showToast(message, type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -275,7 +274,6 @@ HTML_GUARD_STATION = """
 
         setInterval(fetchLogs, 3000);
 
-        // ---------- Edit visitor modal (mirrors the registration form) ----------
         const EDIT_COLLEGES = ['CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE'];
         const EDIT_SUFFIXES = ['N/A', 'Jr.', 'Sr.', 'III', 'IV'];
         const EDIT_GROUPS = {
@@ -296,8 +294,6 @@ HTML_GUARD_STATION = """
         function editVal(id) { return document.getElementById(id).value; }
         function editSet(id, value) { document.getElementById(id).value = (value === null || value === undefined) ? '' : value; }
 
-        // Rebuild the registration-form fields from a stored visitor row
-        // (name = "Surname, First, Middle|N/A, Suffix"; course_year depends on the category).
         function parseVisitorRecord(v) {
             const parts = (v.normalized_name || '').split(',').map(p => p.trim());
             const info = {
@@ -326,7 +322,6 @@ HTML_GUARD_STATION = """
             return info;
         }
 
-        // Only the fields that belong to the selected category are collected (same as registration).
         function collectEditForm() {
             const type = document.getElementById('edit-user-type').value;
             const d = {
@@ -463,7 +458,6 @@ HTML_GUARD_STATION = """
             editTouched = true;
         if (!validateEditForm()) return;
 
-    // Kunin ang original ID at ang form data
         const originalId = editVal('edit-id');
         const payload = Object.assign({ original_id: originalId }, collectEditForm());
     
@@ -508,6 +502,7 @@ HTML_GUARD_STATION = """
         } else {
             showToast(data.message || `${action} recorded successfully!`, 'success');
             fetchLogs();
+            fetchOverstay();
         }
         })
         .catch(() => {
@@ -515,7 +510,6 @@ HTML_GUARD_STATION = """
         });
     }
 
-        // ---------- PDF export ----------
         const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         let exportMode = 'range';
         let exportStudentMap = {};
@@ -811,7 +805,6 @@ HTML_GUARD_STATION = """
         });
         window.addEventListener('scroll', hideSummaryHover, true);
 
-        // ---------- Hamburger menu ----------
         function toggleNavMenu(event) {
             event.stopPropagation();
             const panel = document.getElementById('nav-menu-panel');
@@ -831,21 +824,98 @@ HTML_GUARD_STATION = """
             if (e.key === 'Escape') closeNavMenu();
         });
 
+        const OVERSTAY_POLL_MS = 15000;
+        let overstayKnown = new Set();
+        let overstayMuted = false;
+        let overstayFirstLoad = true;
+        let overstayAudio = null;
+
+        function beepOverstay() {
+            if (overstayMuted) return;
+            try {
+                overstayAudio = overstayAudio || new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = overstayAudio;
+                [0, 0.28, 0.56].forEach(offset => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = 880;
+                    gain.gain.value = 0.08;
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + offset);
+                    osc.stop(ctx.currentTime + offset + 0.18);
+                });
+            } catch (e) {}
+        }
+
+        function muteOverstay() {
+            overstayMuted = !overstayMuted;
+            document.getElementById('overstay-mute-btn').innerText = overstayMuted ? 'Unmute sound' : 'Mute sound';
+        }
+
+        function renderOverstay(data) {
+            const banner = document.getElementById('overstay-banner');
+            const list = data.overstaying || [];
+            if (list.length === 0) {
+                banner.classList.add('hidden');
+                document.title = 'GuardGate | Admin Management';
+                overstayKnown = new Set();
+                overstayFirstLoad = false;
+                return;
+            }
+
+            const fresh = list.filter(v => !overstayKnown.has(v.student_id));
+            overstayKnown = new Set(list.map(v => v.student_id));
+
+            document.getElementById('overstay-title').innerText = list.length === 1
+                ? '1 visitor is still inside past ' + data.cutoff
+                : list.length + ' visitors are still inside past ' + data.cutoff;
+            document.getElementById('overstay-sub').innerText = 'Checked ' + data.now + '. Please locate them and record Time Out once they leave.';
+            document.getElementById('overstay-list').innerHTML = list.map(v => `
+                <li class="flex items-center justify-between gap-3 rounded-xl bg-white border border-rose-200 px-3.5 py-2.5">
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-slate-900 truncate">${escAttr(v.name)} <span class="text-slate-400 font-medium">(${escAttr(v.student_id)})</span></p>
+                        <p class="text-[11px] text-slate-500 truncate">${escAttr(v.college)} | ${escAttr(v.course_year || '-')} | In since ${escAttr(v.time_in)}</p>
+                        <p class="text-[11px] font-bold text-rose-700 mt-0.5">${v.stale ? 'No Time Out from ' + escAttr(v.date) : escAttr(v.over_label) + ' past ' + escAttr(data.cutoff)}</p>
+                    </div>
+                    <button type="button" data-id="${escAttr(v.student_id)}" onclick="manualTime(this.dataset.id, 'Time Out')" class="shrink-0 text-[11px] bg-rose-600 text-white px-3 py-1.5 rounded-lg hover:bg-rose-700 font-semibold transition">Time Out</button>
+                </li>`).join('');
+            banner.classList.remove('hidden');
+            document.title = '(' + list.length + ') Overstay | GuardGate';
+
+            if (fresh.length > 0 && !overstayFirstLoad) {
+                const names = fresh.slice(0, 3).map(v => v.name).join(', ') + (fresh.length > 3 ? ' and ' + (fresh.length - 3) + ' more' : '');
+                showToast('Past ' + data.cutoff + ': ' + escAttr(names) + ' still inside.', 'error', 9000);
+                beepOverstay();
+            } else if (overstayFirstLoad) {
+                beepOverstay();
+            }
+            overstayFirstLoad = false;
+        }
+
+        function fetchOverstay() {
+            fetch('/api/overstay')
+                .then(r => r.json())
+                .then(renderOverstay)
+                .catch(() => {});
+        }
+
         window.onload = () => {
             document.getElementById('category-filter').value = currentCollege;
             fetchStudents();
             fetchLogs();
+            fetchOverstay();
+            setInterval(fetchOverstay, OVERSTAY_POLL_MS);
         };
     </script>
 </head>
 <body class="text-slate-800 antialiased min-h-screen">
     
-    <!-- FLOATING TOAST NOTIFICATION CONTAINER -->
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         
-        <!-- HEADER -->
         <header class="mb-6 border-b border-emerald-900/10 pb-5 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3.5">
                 <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-800/15">
@@ -856,7 +926,6 @@ HTML_GUARD_STATION = """
                     
                 </div>
             </div>
-            <!-- HAMBURGER MENU -->
             <div class="relative shrink-0">
                 <button type="button" id="nav-menu-btn" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="nav-menu-panel" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center shadow-sm border border-emerald-900/20 transition focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -885,9 +954,23 @@ HTML_GUARD_STATION = """
             </div>
         </header>
 
+        <section id="overstay-banner" class="hidden mb-6 rounded-2xl border border-rose-300 bg-rose-50 shadow-sm overflow-hidden" role="alert" aria-live="assertive">
+            <div class="px-5 py-4 flex items-start gap-4">
+                <div class="relative shrink-0 w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center">
+                    <span class="absolute inset-0 rounded-xl bg-rose-500 animate-ping opacity-40"></span>
+                    <svg class="relative w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h2 id="overstay-title" class="text-sm font-extrabold text-rose-900"></h2>
+                    <p id="overstay-sub" class="text-xs text-rose-800/80 mt-0.5"></p>
+                    <ul id="overstay-list" class="mt-3 grid grid-cols-1 xl:grid-cols-2 gap-2"></ul>
+                </div>
+                <button type="button" onclick="muteOverstay()" id="overstay-mute-btn" class="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-rose-800 bg-white border border-rose-200 rounded-lg hover:bg-rose-100 transition">Mute sound</button>
+            </div>
+        </section>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- TIME LOGS LIST -->
             <div class="lg:col-span-1 bg-white rounded-2xl p-5 shadow-sm border border-emerald-900/10 max-h-[750px] flex flex-col">
                 <h2 class="text-sm font-bold mb-3 text-emerald-950 flex items-center justify-between">
                     Attendance History
@@ -917,9 +1000,7 @@ HTML_GUARD_STATION = """
                 </div>
             </div>
 
-            <!-- VISITOR / STUDENT MANAGEMENT LIST -->
             <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-emerald-900/10">
-                <!-- RECORD CONTROLS: one category dropdown + independent search -->
                 <div class="flex flex-col sm:flex-row sm:items-end gap-3 mb-5 pb-5 border-b border-slate-100">
                     <div class="sm:w-52 shrink-0">
                         <label for="category-filter" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category</label>
@@ -974,7 +1055,6 @@ HTML_GUARD_STATION = """
         </div>
     </div>
 
-    <!-- EDIT VISITOR MODAL (mirrors the registration form: category first, then fields for that category) -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" onmousedown="if (event.target === this) closeEditModal()">
         <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-lg max-h-[94vh] flex flex-col overflow-hidden border border-slate-200">
 
@@ -997,7 +1077,6 @@ HTML_GUARD_STATION = """
                 <input type="hidden" id="edit-id">
 
                 <div class="px-6 py-5 space-y-4 overflow-y-auto min-h-0">
-                    <!-- USER TYPE SELECTOR -->
                     <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
                         <label for="edit-user-type" class="block text-xs font-bold uppercase tracking-wider text-emerald-900 mb-1.5">User Type <span class="text-rose-600">*</span></label>
                     <select id="edit-user-type" disabled tabindex="-1" class="w-full border border-slate-200 bg-slate-50 text-slate-500 rounded-lg px-3.5 py-2 text-sm font-semibold outline-none cursor-not-allowed">
@@ -1009,7 +1088,6 @@ HTML_GUARD_STATION = """
                         <p id="edit-type-hint" class="text-[11px] text-emerald-800/80 mt-1.5 font-medium"></p>
                     </div>
 
-                    <!-- NAME FIELDS (COMMON TO ALL) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label for="edit-surname" class="block text-[11px] font-semibold text-slate-700">Surname <span class="text-rose-600">*</span></label>
@@ -1035,7 +1113,6 @@ HTML_GUARD_STATION = """
                         </div>
                     </div>
 
-                    <!-- STUDENT FIELDS -->
                     <div id="edit-group-student" class="pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="space-y-1 md:col-span-2">
                             <label for="edit-college" class="block text-[11px] font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
@@ -1073,13 +1150,11 @@ HTML_GUARD_STATION = """
                         </div>
                     </div>
 
-                    <!-- PARENT FIELDS -->
                     <div id="edit-group-parent" class="hidden pt-3 border-t border-slate-100 space-y-1">
                         <label for="edit-parent-address" class="block text-[11px] font-semibold text-slate-700">Home / Residential Address <span class="text-rose-600">*</span></label>
                         <input type="text" id="edit-parent-address" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
                     </div>
 
-                    <!-- FACULTY FIELDS -->
                     <div id="edit-group-faculty" class="hidden pt-3 border-t border-slate-100 grid grid-cols-1 gap-3">
                         <div class="space-y-1">
                             <label for="edit-faculty-college" class="block text-[11px] font-semibold text-slate-700">College <span class="text-rose-600">*</span></label>
@@ -1103,7 +1178,6 @@ HTML_GUARD_STATION = """
                         </div>
                     </div>
 
-                    <!-- OTHERS FIELDS -->
                     <div id="edit-group-others" class="hidden pt-3 border-t border-slate-100 space-y-1">
                         <label for="edit-other-address" class="block text-[11px] font-semibold text-slate-700">Address or Purpose of Visit <span class="text-rose-600">*</span></label>
                         <input type="text" id="edit-other-address" oninput="onEditInput()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
@@ -1119,7 +1193,6 @@ HTML_GUARD_STATION = """
         </div>
     </div>
 
-    <!-- EXPORT PDF MODAL -->
     <div id="export-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="export-modal-title" onmousedown="if (event.target === this) closeExportModal()">
         <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-lg max-h-[94vh] flex flex-col overflow-hidden border border-slate-200">
 
@@ -1185,7 +1258,6 @@ HTML_GUARD_STATION = """
         </div>
     </div>
 
-    <!-- VISITOR SUMMARY HOVER CARD -->
     <div id="summary-hover" class="hidden fixed z-[70] w-80 max-w-[calc(100vw-1rem)] pointer-events-none rounded-2xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/20 p-4" role="tooltip">
         <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
@@ -1208,7 +1280,6 @@ HTML_GUARD_STATION = """
         </div>
     </div>
 
-    <!-- CONFIRM DELETE MODAL -->
     <div id="confirm-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" onmousedown="if (event.target === this) closeConfirmModal()">
         <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 w-full max-w-sm overflow-hidden border border-slate-200">
             <div class="px-6 pt-6 pb-5 flex items-start gap-3.5">
@@ -1261,8 +1332,6 @@ EDIT_COLLEGE_CODES = ('CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASA
 EDIT_SUFFIXES = ('N/A', 'Jr.', 'Sr.', 'III', 'IV')
 
 def _compose_visitor_record(data):
-    """Rebuild normalized_name / college / course_year exactly like /register does.
-    Returns (error_message, fields). error_message is None when the input is valid."""
     def field(key):
         return str(data.get(key) or '').strip()
 
@@ -1292,13 +1361,12 @@ def _compose_visitor_record(data):
             return "College is required for Faculty!", None
         if not department:
             return "Department is required for Faculty!", None
-        # Category stays "Faculty" so Guard filters keep working; the faculty's college is stored with the department
         college, course = "Faculty", f"{faculty_college} - {department}"
 
     elif user_type == 'Others':
         college, course = "Others", (field('other_address') or "Visitor")
 
-    else:  # Student
+    else:
         college = field('college')
         program = field('course').upper()
         year_level = field('year_level')
@@ -1322,26 +1390,22 @@ def edit_student():
         if not original_id or not new_id:
             return jsonify({"message": "Missing required fields."}), 400
 
-        # I-compose ang bagong details ng visitor
         error, fields = _compose_visitor_record(data)
         if error:
             return jsonify({"message": error}), 400
             
         fields["student_id"] = new_id
 
-        # Kung nagbago ang ID, i-check muna kung ginagamit na ng iba ang bagong ID
         if original_id != new_id:
             check_existing = supabase.table("visitors").select("student_id").eq("student_id", new_id).execute()
             if check_existing.data:
                 return jsonify({"message": "Student ID already exists!"}), 400
 
-        # I-update ang visitors table
         res = supabase.table("visitors").update(fields).eq("student_id", original_id).execute()
 
         if not res.data:
             return jsonify({"message": "Student not found."}), 404
 
-        # Kung nagbago ang ID, i-update din sa logs table para hindi masira ang history
         if original_id != new_id:
             supabase.table("logs").update({"student_id": new_id}).eq("student_id", original_id).execute()
 
@@ -1450,7 +1514,6 @@ def delete_all_logs():
 
 
 def _month_bounds(from_month, to_month):
-    """Turn 'YYYY-MM' + 'YYYY-MM' into (start, end_exclusive) timestamp strings."""
     start_dt = datetime.strptime(from_month, "%Y-%m")
     to_dt = datetime.strptime(to_month, "%Y-%m")
     if start_dt > to_dt:
@@ -1465,7 +1528,6 @@ def _month_bounds(from_month, to_month):
     )
 
 def _fetch_logs_for_export(start=None, end=None, student_id=None):
-    """Read every matching log row, paging past Supabase's 1000-row response cap."""
     rows = []
     page_size = 1000
     offset = 0
@@ -1485,7 +1547,6 @@ def _fetch_logs_for_export(start=None, end=None, student_id=None):
     return rows
 
 def _pretty_name(raw):
-    """'Santos, Maria, N/A, Jr.' -> 'Santos, Maria Jr.' (drops empty N/A parts)."""
     parts = [p.strip() for p in (raw or "").split(",")]
     parts = [p for p in parts if p and p.upper() != "N/A"]
     if len(parts) <= 1:
@@ -1843,7 +1904,7 @@ def export_logs_pdf():
         student = found[0]
 
     try:
-        from reportlab.lib.pagesizes import A4  # noqa: F401
+        from reportlab.lib.pagesizes import A4
     except ImportError:
         return jsonify({"message": "PDF export needs the reportlab package. Run: pip install reportlab"}), 500
 
@@ -1936,4 +1997,69 @@ def student_summary():
         "last_visit": events[-1][0].strftime(stamp) if events else None,
         "status": ("Inside" if events[-1][1] == "Time In" else "Outside") if events else None,
         "recent": recent,
+    })
+
+
+CURFEW_HOUR = 20
+CURFEW_LOOKBACK_DAYS = 7
+PH_TZ = timezone(timedelta(hours=8))
+
+def _over_label(minutes):
+    minutes = max(0, int(minutes))
+    hours, mins = divmod(minutes, 60)
+    if hours and mins:
+        return f"{hours}h {mins}m"
+    return f"{hours}h" if hours else f"{mins}m"
+
+def find_overstaying_visitors(now=None):
+    now = now or datetime.now(PH_TZ).replace(tzinfo=None)
+    today = now.date()
+    curfew = datetime.combine(today, datetime.min.time()).replace(hour=CURFEW_HOUR)
+    since = (now - timedelta(days=CURFEW_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
+    rows = _fetch_logs_for_export(since, None, None)
+
+    latest = {}
+    for r in rows:
+        if r.get("action") in ("Time In", "Time Out"):
+            latest[r.get("student_id")] = r
+
+    overstaying = []
+    for sid, r in latest.items():
+        if r.get("action") != "Time In":
+            continue
+        ts = _parse_ts(r.get("timestamp"))
+        if ts is None:
+            continue
+        stale = ts.date() < today
+        if not stale and now < curfew:
+            continue
+        minutes_over = 0 if stale else (now - curfew).total_seconds() / 60
+        overstaying.append({
+            "student_id": sid,
+            "name": _pretty_name(r.get("normalized_name")),
+            "college": r.get("college"),
+            "course_year": r.get("course_year"),
+            "time_in": ts.strftime("%b %d, %I:%M %p") if stale else ts.strftime("%I:%M %p"),
+            "date": ts.strftime("%b %d, %Y"),
+            "stale": stale,
+            "minutes_over": int(minutes_over),
+            "over_label": _over_label(minutes_over),
+        })
+
+    overstaying.sort(key=lambda v: (not v["stale"], -v["minutes_over"], v["name"].lower()))
+    return overstaying, now, curfew
+
+@guard_bp.route('/api/overstay')
+def overstay_check():
+    try:
+        overstaying, now, curfew = find_overstaying_visitors()
+    except Exception:
+        logging.exception("Failed to check overstaying visitors")
+        return jsonify({"message": "Failed to check visitor logs.", "overstaying": []}), 500
+
+    return jsonify({
+        "cutoff": curfew.strftime("%I:%M %p").lstrip("0"),
+        "now": now.strftime("%I:%M %p").lstrip("0"),
+        "past_cutoff": now >= curfew,
+        "overstaying": overstaying,
     })
