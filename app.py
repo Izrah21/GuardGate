@@ -688,7 +688,6 @@ HTML_TEMPLATE = """
                             <span class="truncate">Visitor Credentials</span>
                         </span>
                         <span class="shrink-0 text-[11px] font-medium text-fuchsia-200 bg-fuchsia-500/20 px-2.5 py-0.5 rounded-full">
-                            Verify: 2.5s Hold
                         </span>
                     </div>
 
