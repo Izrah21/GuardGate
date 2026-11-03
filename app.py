@@ -13,6 +13,9 @@ from datetime import datetime, timezone, timedelta
 from admin import admin_bp
 from guard import guard_bp
 
+from flask import Blueprint
+guard_bp = Blueprint('guard', __name__)
+
 SUPABASE_URL = "https://qciehqzajzaejhsjzrdm.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjaWVocXphanphZWpoc2p6cmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODQwNDksImV4cCI6MjEwNDY2MDA0OX0.0An1BSRjssOI7SliI1lC3jkMo14XVHbUnfXFt015Uyo"
 
