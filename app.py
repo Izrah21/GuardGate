@@ -658,6 +658,10 @@ HTML_TEMPLATE = """
                     
                 </div>
             </div>
+            <div id="live-clock" class="ml-auto text-right leading-tight">
+                <p data-time class="text-sm font-bold text-emerald-950 tabular-nums"></p>
+                <p data-date class="text-[11px] font-medium text-slate-500"></p>
+            </div>
         </header>
 
         <main class="flex-1 min-h-0 p-3 sm:p-5">
@@ -1520,6 +1524,16 @@ HTML_TEMPLATE = """
                 setSubmitEnabled();
             });
         }
+
+        function tickClock() {
+            const el = document.getElementById('live-clock');
+            if (!el) return;
+            const d = new Date();
+            const opt = { timeZone: 'Asia/Manila' };
+            el.querySelector('[data-time]').textContent = d.toLocaleTimeString('en-PH', { ...opt, hour: 'numeric', minute: '2-digit', second: '2-digit' });
+            el.querySelector('[data-date]').textContent = d.toLocaleDateString('en-PH', { ...opt, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        document.addEventListener('DOMContentLoaded', () => { tickClock(); setInterval(tickClock, 1000); });
     </script>
 </body>
 </html>

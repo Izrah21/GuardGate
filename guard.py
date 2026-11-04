@@ -2,19 +2,35 @@ import io
 import re
 import time
 import logging
+import httpx
 from collections import OrderedDict
 from datetime import datetime
 from flask import Blueprint, render_template_string, request, jsonify, send_file
 from supabase import create_client, Client
 from flask import session, redirect, abort
 from datetime import datetime, timezone, timedelta
+from supabase.lib.client_options import ClientOptions
 
 guard_bp = Blueprint('guard_bp', __name__)
 
 SUPABASE_URL = "https://qciehqzajzaejhsjzrdm.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjaWVocXphanphZWpoc2p6cmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODQwNDksImV4cCI6MjEwNDY2MDA0OX0.0An1BSRjssOI7SliI1lC3jkMo14XVHbUnfXFt015Uyo"
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+http = httpx.Client(http2=False, timeout=30, limits=httpx.Limits(max_keepalive_connections=0))
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(httpx_client=http))
+except TypeError:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def run_query(q, retries=3):
+    for attempt in range(retries):
+        try:
+            return q.execute()
+        except (httpx.ReadError, httpx.RemoteProtocolError, httpx.ConnectError):
+            if attempt == retries - 1:
+                raise
+            time.sleep(0.2 * (attempt + 1))
 
 HTML_GUARD_STATION = """
 <!DOCTYPE html>
@@ -88,12 +104,23 @@ HTML_GUARD_STATION = """
             fetchLogs();
         }
 
-        function fetchStudents() {
-            hideSummaryHover();
+        let studentsSig = null;
+
+        function fetchStudents(isPoll = false) {
+            if (isPoll !== true) isPoll = false;
+            if (!isPoll) hideSummaryHover();
             const query = document.getElementById('search-input').value;
-            fetch(`/api/students?college=${currentCollege}&q=${encodeURIComponent(query)}`)
+            const reqCollege = currentCollege;
+            fetch(`/api/students?college=${reqCollege}&q=${encodeURIComponent(query)}`)
                 .then(r => r.json())
                 .then(data => {
+                    if (!Array.isArray(data)) return;
+                    if (isPoll) {
+                        if (reqCollege !== currentCollege || query !== document.getElementById('search-input').value) return;
+                        if (JSON.stringify(data) === studentsSig) return;
+                        hideSummaryHover();
+                    }
+                    studentsSig = JSON.stringify(data);
                     const tbody = document.getElementById('students-tbody');
                     tbody.innerHTML = '';
                     visitorCache = {};
@@ -273,6 +300,7 @@ HTML_GUARD_STATION = """
         });
 
         setInterval(fetchLogs, 3000);
+        setInterval(() => { if (!document.hidden) fetchStudents(true); }, 5000);
 
         const EDIT_COLLEGES = ['CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE'];
         const EDIT_SUFFIXES = ['N/A', 'Jr.', 'Sr.', 'III', 'IV'];
@@ -869,15 +897,15 @@ HTML_GUARD_STATION = """
             overstayKnown = new Set(list.map(v => v.student_id));
 
             document.getElementById('overstay-title').innerText = list.length === 1
-                ? '1 visitor is still inside past ' + data.cutoff
-                : list.length + ' visitors are still inside past ' + data.cutoff;
-            document.getElementById('overstay-sub').innerText = 'Checked ' + data.now + '. Please locate them and record Time Out once they leave.';
+                ? '1 visitor is still inside the dorm past ' + data.cutoff
+                : list.length + ' visitors are still inside the dorm past ' + data.cutoff;
+            document.getElementById('overstay-sub').innerText = 'Checked at ' + data.now + '. Please locate them and record Time Out once they leave.';
             document.getElementById('overstay-list').innerHTML = list.map(v => `
                 <li class="flex items-center justify-between gap-3 rounded-xl bg-white border border-rose-200 px-3.5 py-2.5">
                     <div class="min-w-0">
                         <p class="text-xs font-bold text-slate-900 truncate">${escAttr(v.name)} <span class="text-slate-400 font-medium">(${escAttr(v.student_id)})</span></p>
                         <p class="text-[11px] text-slate-500 truncate">${escAttr(v.college)} | ${escAttr(v.course_year || '-')} | In since ${escAttr(v.time_in)}</p>
-                        <p class="text-[11px] font-bold text-rose-700 mt-0.5">${v.stale ? 'No Time Out from ' + escAttr(v.date) : escAttr(v.over_label) + ' past ' + escAttr(data.cutoff)}</p>
+                        <p class="text-[11px] font-bold text-rose-700 mt-0.5">${v.stale ? 'No Time Out since ' + escAttr(v.time_in) : escAttr(v.over_label) + ' past ' + escAttr(data.cutoff)}</p>
                     </div>
                     <button type="button" data-id="${escAttr(v.student_id)}" onclick="manualTime(this.dataset.id, 'Time Out')" class="shrink-0 text-[11px] bg-rose-600 text-white px-3 py-1.5 rounded-lg hover:bg-rose-700 font-semibold transition">Time Out</button>
                 </li>`).join('');
@@ -886,7 +914,7 @@ HTML_GUARD_STATION = """
 
             if (fresh.length > 0 && !overstayFirstLoad) {
                 const names = fresh.slice(0, 3).map(v => v.name).join(', ') + (fresh.length > 3 ? ' and ' + (fresh.length - 3) + ' more' : '');
-                showToast('Past ' + data.cutoff + ': ' + escAttr(names) + ' still inside.', 'error', 9000);
+                showToast('Past ' + data.cutoff + ', still inside the dorm: ' + escAttr(names), 'error', 9000);
                 beepOverstay();
             } else if (overstayFirstLoad) {
                 beepOverstay();
@@ -908,6 +936,16 @@ HTML_GUARD_STATION = """
             fetchOverstay();
             setInterval(fetchOverstay, OVERSTAY_POLL_MS);
         };
+
+        function tickClock() {
+            const el = document.getElementById('live-clock');
+            if (!el) return;
+            const d = new Date();
+            const opt = { timeZone: 'Asia/Manila' };
+            el.querySelector('[data-time]').textContent = d.toLocaleTimeString('en-PH', { ...opt, hour: 'numeric', minute: '2-digit', second: '2-digit' });
+            el.querySelector('[data-date]').textContent = d.toLocaleDateString('en-PH', { ...opt, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        document.addEventListener('DOMContentLoaded', () => { tickClock(); setInterval(tickClock, 1000); });
     </script>
 </head>
 <body class="text-slate-800 antialiased min-h-screen">
@@ -925,6 +963,10 @@ HTML_GUARD_STATION = """
                     <h1 class="text-2xl font-bold text-emerald-950 tracking-tight">GuardGate Admin Station</h1>
                     
                 </div>
+            </div>
+            <div id="live-clock" class="ml-auto text-right leading-tight">
+                <p data-time class="text-sm font-bold text-emerald-950 tabular-nums"></p>
+                <p data-date class="text-[11px] font-medium text-slate-500"></p>
             </div>
             <div class="relative shrink-0">
                 <button type="button" id="nav-menu-btn" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="nav-menu-panel" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center shadow-sm border border-emerald-900/20 transition focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
@@ -1317,7 +1359,7 @@ def get_students():
     if q:
         query = query.or_(f"normalized_name.ilike.%{q}%,student_id.ilike.%{q}%,course_year.ilike.%{q}%")
     
-    return jsonify(query.execute().data)
+    return jsonify(run_query(query).data)
 
 @guard_bp.route('/api/logs')
 def get_logs():
@@ -1326,7 +1368,7 @@ def get_logs():
     if college != 'ALL':
         query = query.eq("college", college)
     
-    return jsonify(query.order("id", desc=True).limit(30).execute().data)
+    return jsonify(run_query(query.order("id", desc=True).limit(30)).data)
 
 EDIT_COLLEGE_CODES = ('CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE')
 EDIT_SUFFIXES = ('N/A', 'Jr.', 'Sr.', 'III', 'IV')
@@ -1397,17 +1439,17 @@ def edit_student():
         fields["student_id"] = new_id
 
         if original_id != new_id:
-            check_existing = supabase.table("visitors").select("student_id").eq("student_id", new_id).execute()
+            check_existing = run_query(supabase.table("visitors").select("student_id").eq("student_id", new_id))
             if check_existing.data:
                 return jsonify({"message": "Student ID already exists!"}), 400
 
-        res = supabase.table("visitors").update(fields).eq("student_id", original_id).execute()
+        res = run_query(supabase.table("visitors").update(fields).eq("student_id", original_id))
 
         if not res.data:
             return jsonify({"message": "Student not found."}), 404
 
         if original_id != new_id:
-            supabase.table("logs").update({"student_id": new_id}).eq("student_id", original_id).execute()
+            run_query(supabase.table("logs").update({"student_id": new_id}).eq("student_id", original_id))
 
         return jsonify({"message": "Student information updated successfully!"})
 
@@ -1424,18 +1466,17 @@ def manual_log():
     if action not in ('Time In', 'Time Out'):
         return jsonify({"message": "Invalid action requested."}), 400
 
-    res = supabase.table("visitors").select("*").eq("student_id", s_id).execute()
+    res = run_query(supabase.table("visitors").select("*").eq("student_id", s_id))
     if not res.data:
         return jsonify({"message": "Student/Visitor not found."}), 404
 
     student = res.data[0]
 
-    last_log_res = supabase.table("logs") \
-        .select("action") \
-        .eq("student_id", s_id) \
-        .order("id", desc=True) \
-        .limit(1) \
-        .execute()
+    last_log_res = run_query(supabase.table("logs")
+        .select("action")
+        .eq("student_id", s_id)
+        .order("id", desc=True)
+        .limit(1))
 
     last_action = last_log_res.data[0]["action"] if last_log_res.data else None
 
@@ -1452,14 +1493,14 @@ def manual_log():
     ph_tz = timezone(timedelta(hours=8))
     timestamp = datetime.now(ph_tz).strftime("%Y-%m-%d %I:%M:%S %p")
 
-    supabase.table("logs").insert({
+    run_query(supabase.table("logs").insert({
         "student_id": s_id,
         "normalized_name": student["normalized_name"],
         "college": student["college"],
         "course_year": student["course_year"],
         "action": action,
         "timestamp": timestamp
-    }).execute()
+    }))
 
     return jsonify({"message": f"Successfully recorded {action}!"})
 
@@ -1475,7 +1516,7 @@ def delete_logs():
         return jsonify({"message": "Invalid selection.", "deleted": 0}), 400
 
     try:
-        res = supabase.table("logs").delete().in_("id", ids).execute()
+        res = run_query(supabase.table("logs").delete().in_("id", ids))
     except Exception:
         logging.exception("Failed to delete selected logs")
         return jsonify({"message": "Failed to delete log entries.", "deleted": 0}), 500
@@ -1498,7 +1539,7 @@ def delete_all_logs():
         query = supabase.table("logs").delete().not_.is_("id", "null")
         if college != 'ALL':
             query = query.eq("college", college)
-        res = query.execute()
+        res = run_query(query)
     except Exception:
         logging.exception("Failed to delete all logs")
         return jsonify({"message": "Failed to clear logs.", "deleted": 0}), 500
@@ -1539,7 +1580,7 @@ def _fetch_logs_for_export(start=None, end=None, student_id=None):
             query = query.lt("timestamp", end)
         if student_id:
             query = query.eq("student_id", student_id)
-        batch = query.order("id").range(offset, offset + page_size - 1).execute().data or []
+        batch = run_query(query.order("id").range(offset, offset + page_size - 1)).data or []
         rows.extend(batch)
         if len(batch) < page_size:
             break
@@ -1898,7 +1939,7 @@ def export_logs_pdf():
     if mode == 'student':
         if not student_id:
             return jsonify({"message": "Choose a visitor to export."}), 400
-        found = supabase.table("visitors").select("*").eq("student_id", student_id).execute().data
+        found = run_query(supabase.table("visitors").select("*").eq("student_id", student_id)).data
         if not found:
             return jsonify({"message": "Visitor not found."}), 404
         student = found[0]
@@ -1948,7 +1989,7 @@ def student_summary():
         return jsonify({"message": "Choose a visitor."}), 400
 
     try:
-        found = supabase.table("visitors").select("*").eq("student_id", student_id).execute().data
+        found = run_query(supabase.table("visitors").select("*").eq("student_id", student_id)).data
         if not found:
             return jsonify({"message": "Visitor not found."}), 404
         visitor = found[0]
@@ -2001,6 +2042,7 @@ def student_summary():
 
 
 CURFEW_HOUR = 20
+ALERT_END_HOUR = 6
 CURFEW_LOOKBACK_DAYS = 7
 PH_TZ = timezone(timedelta(hours=8))
 
@@ -2013,8 +2055,14 @@ def _over_label(minutes):
 
 def find_overstaying_visitors(now=None):
     now = now or datetime.now(PH_TZ).replace(tzinfo=None)
-    today = now.date()
-    curfew = datetime.combine(today, datetime.min.time()).replace(hour=CURFEW_HOUR)
+    midnight = datetime.combine(now.date(), datetime.min.time())
+    if now.hour >= CURFEW_HOUR:
+        curfew = midnight.replace(hour=CURFEW_HOUR)
+    elif now.hour < ALERT_END_HOUR:
+        curfew = (midnight - timedelta(days=1)).replace(hour=CURFEW_HOUR)
+    else:
+        return [], now, midnight.replace(hour=CURFEW_HOUR)
+
     since = (now - timedelta(days=CURFEW_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
     rows = _fetch_logs_for_export(since, None, None)
 
@@ -2028,12 +2076,10 @@ def find_overstaying_visitors(now=None):
         if r.get("action") != "Time In":
             continue
         ts = _parse_ts(r.get("timestamp"))
-        if ts is None:
+        if ts is None or ts > now:
             continue
-        stale = ts.date() < today
-        if not stale and now < curfew:
-            continue
-        minutes_over = 0 if stale else (now - curfew).total_seconds() / 60
+        stale = ts.date() < curfew.date()
+        minutes_over = (now - curfew).total_seconds() / 60
         overstaying.append({
             "student_id": sid,
             "name": _pretty_name(r.get("normalized_name")),
@@ -2060,6 +2106,6 @@ def overstay_check():
     return jsonify({
         "cutoff": curfew.strftime("%I:%M %p").lstrip("0"),
         "now": now.strftime("%I:%M %p").lstrip("0"),
-        "past_cutoff": now >= curfew,
+        "past_cutoff": now >= curfew and bool(overstaying),
         "overstaying": overstaying,
     })
