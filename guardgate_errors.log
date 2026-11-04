@@ -20105,3 +20105,1410 @@
 2026-11-03 20:35:32,586 - INFO - 127.0.0.1 - - [03/Nov/2026 20:35:32] "GET /api/logs?college=ALL HTTP/1.1" 200 -
 2026-11-03 20:36:32,032 - INFO - 127.0.0.1 - - [03/Nov/2026 20:36:32] "GET /api/logs?college=ALL HTTP/1.1" 200 -
 2026-11-03 20:36:32,038 - INFO - 127.0.0.1 - - [03/Nov/2026 20:36:32] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 16:33:51,210 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.30.79:5000
+2026-11-04 16:33:51,217 - INFO - Press CTRL+C to quit
+2026-11-04 16:33:51,223 - INFO -  * Restarting with stat
+2026-11-04 16:33:55,974 - WARNING -  * Debugger is active!
+2026-11-04 16:33:56,007 - INFO -  * Debugger PIN: 119-448-259
+2026-11-04 16:34:07,735 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:07] "GET / HTTP/1.1" 302 -
+2026-11-04 16:34:07,765 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:07] "GET /login HTTP/1.1" 200 -
+2026-11-04 16:34:09,079 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:09] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-04 16:34:10,196 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:10] "GET /scanner HTTP/1.1" 200 -
+2026-11-04 16:34:24,151 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:24] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:24,204 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:24] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:24,703 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:24] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:25,142 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:25] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:25,588 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:25] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:26,039 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:26] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:26,498 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:26] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:26,960 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:26] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:34:27,424 - INFO - 127.0.0.1 - - [04/Nov/2026 16:34:27] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:00,958 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:00] "POST /check-face HTTP/1.1" 200 -
+2026-11-04 16:35:03,465 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:03] "POST /check_duplicate HTTP/1.1" 200 -
+2026-11-04 16:35:08,827 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:08] "POST /register HTTP/1.1" 200 -
+2026-11-04 16:35:09,450 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:09,623 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:09,975 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:09] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:10,428 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:10] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:10,882 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:10] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:11,350 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:11] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:12,160 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:12] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:12,276 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:12] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:12,730 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:12] "POST /analyze HTTP/1.1" 200 -
+2026-11-04 16:35:13,446 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:13] "POST /attendance HTTP/1.1" 200 -
+2026-11-04 16:35:32,528 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:32] "GET /guard_login HTTP/1.1" 200 -
+2026-11-04 16:35:37,626 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:37] "POST /guard_login HTTP/1.1" 302 -
+2026-11-04 16:35:37,667 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:37] "GET /guard HTTP/1.1" 200 -
+2026-11-04 16:35:38,212 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:38] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 16:35:38,669 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:38] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:35:39,284 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:39] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:35:39,713 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:39] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-04 16:35:41,093 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:41] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:35:44,034 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:44] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:35:44,093 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:44] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-04 16:35:44,097 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:44] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:35:46,638 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:46] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-04 16:35:47,088 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:47] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:35:48,365 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:48] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:35:48,949 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:48] "GET /api/students/summary?student_id=25-030230 HTTP/1.1" 200 -
+2026-11-04 16:35:49,342 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:49] "GET /api/students/summary?student_id=PAR-2297FA HTTP/1.1" 200 -
+2026-11-04 16:35:50,090 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:50] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:35:52,004 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:52] "GET /admin-login HTTP/1.1" 200 -
+2026-11-04 16:35:54,862 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:54] "POST /admin-login HTTP/1.1" 302 -
+2026-11-04 16:35:54,879 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:54] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 16:35:58,501 - INFO - 127.0.0.1 - - [04/Nov/2026 16:35:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:36:03,437 - INFO - 127.0.0.1 - - [04/Nov/2026 16:36:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:36:07,690 - INFO - 127.0.0.1 - - [04/Nov/2026 16:36:07] "POST /api/admin/delete-visitor HTTP/1.1" 200 -
+2026-11-04 16:36:08,494 - INFO - 127.0.0.1 - - [04/Nov/2026 16:36:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:36:11,376 - INFO - 127.0.0.1 - - [04/Nov/2026 16:36:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:36:14,362 - INFO - 127.0.0.1 - - [04/Nov/2026 16:36:14] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:08,363 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.30.79:5000
+2026-11-04 16:48:08,366 - INFO - Press CTRL+C to quit
+2026-11-04 16:48:08,372 - INFO -  * Restarting with stat
+2026-11-04 16:48:12,252 - WARNING -  * Debugger is active!
+2026-11-04 16:48:12,256 - INFO -  * Debugger PIN: 119-448-259
+2026-11-04 16:48:12,868 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:12] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:16,403 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:21,368 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:26,379 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:31,389 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:36,388 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:41,375 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:48:46,372 - INFO - 127.0.0.1 - - [04/Nov/2026 16:48:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:49:19,518 - INFO - 127.0.0.1 - - [04/Nov/2026 16:49:19] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:50:19,710 - INFO - 127.0.0.1 - - [04/Nov/2026 16:50:19] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:50:26,246 - INFO - 127.0.0.1 - - [04/Nov/2026 16:50:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:50:33,515 - INFO - 127.0.0.1 - - [04/Nov/2026 16:50:33] "GET / HTTP/1.1" 302 -
+2026-11-04 16:50:33,555 - INFO - 127.0.0.1 - - [04/Nov/2026 16:50:33] "GET /login HTTP/1.1" 200 -
+2026-11-04 16:50:40,613 - INFO - 127.0.0.1 - - [04/Nov/2026 16:50:40] "GET /guard_login HTTP/1.1" 200 -
+2026-11-04 16:52:07,174 - INFO - 127.0.0.1 - - [04/Nov/2026 16:52:07] "POST /guard_login HTTP/1.1" 200 -
+2026-11-04 16:53:56,930 - INFO - 127.0.0.1 - - [04/Nov/2026 16:53:56] "POST /guard_login HTTP/1.1" 302 -
+2026-11-04 16:53:56,968 - INFO - 127.0.0.1 - - [04/Nov/2026 16:53:56] "GET /guard HTTP/1.1" 200 -
+2026-11-04 16:53:57,371 - INFO - 127.0.0.1 - - [04/Nov/2026 16:53:57] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 16:53:58,364 - INFO - 127.0.0.1 - - [04/Nov/2026 16:53:58] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:53:58,366 - INFO - 127.0.0.1 - - [04/Nov/2026 16:53:58] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:54:00,393 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:00] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:54:01,398 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:01] "GET /admin-login HTTP/1.1" 302 -
+2026-11-04 16:54:01,419 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:01] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 16:54:02,088 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:02] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:02,443 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:02] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:07,027 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:07] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:07,413 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:07] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:12,011 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:12] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:12,404 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:12] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:17,028 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:17] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:17,361 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:17] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:22,004 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:22] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:22,418 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:22] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:27,018 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:27] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:27,351 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:27] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:31,999 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:32,376 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:32] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:37,340 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:37] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:37,343 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:37] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:42,336 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:42] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:42,340 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:42] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:47,009 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:47] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:47,372 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:47] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:52,013 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:52] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:52,347 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:52] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:54:57,033 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:57] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:54:57,396 - INFO - 127.0.0.1 - - [04/Nov/2026 16:54:57] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:02,388 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:02] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:02,391 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:02] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:03,732 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:03] "GET /guard HTTP/1.1" 200 -
+2026-11-04 16:55:04,077 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:04] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 16:55:04,503 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:04] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:55:04,566 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:04] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:07,131 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:08,652 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:08] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-04 16:55:09,156 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:09] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:55:10,138 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:10] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:13,183 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:14,160 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:14] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:55:16,133 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:16] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:19,067 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:19] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 16:55:19,148 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:19] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:55:19,151 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:19] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:22,135 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:24,143 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:24] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 16:55:25,132 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:25] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 16:55:25,292 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:25] "GET /admin-login HTTP/1.1" 302 -
+2026-11-04 16:55:25,328 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:25] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 16:55:26,097 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:26,460 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:31,436 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:31,440 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:36,059 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:36,448 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:41,067 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:41,410 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:46,091 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:46,430 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:51,064 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:51,424 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:55:56,085 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:55:56,435 - INFO - 127.0.0.1 - - [04/Nov/2026 16:55:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:01,379 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:01,383 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:06,398 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:06,402 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:11,058 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:11,407 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:16,049 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:16,399 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:21,080 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:21,411 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:26,128 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:26,453 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:31,051 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:31,388 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:36,141 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:36,490 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:41,065 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:41,398 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:46,051 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:46,419 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:51,052 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:51,400 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:56:56,059 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:56:56,393 - INFO - 127.0.0.1 - - [04/Nov/2026 16:56:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:01,386 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:01,389 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:06,057 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:06,393 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:11,059 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:11,389 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:16,089 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:16,496 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:21,052 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:21,385 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:26,412 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:26,416 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:30,774 - ERROR - Failed to load visitor occupancy
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+        pool_request.request
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 187, in handle_request
+    raise exc
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 150, in handle_request
+    status, headers = self._receive_response(
+                      ~~~~~~~~~~~~~~~~~~~~~~^
+        request=request, stream_id=stream_id
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 294, in _receive_response
+    event = self._receive_stream_event(request, stream_id)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 336, in _receive_stream_event
+    self._receive_events(request, stream_id)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 364, in _receive_events
+    events = self._read_incoming_data(request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 438, in _read_incoming_data
+    raise self._read_exception  # pragma: nocover
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+        pool_request.request
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 187, in handle_request
+    raise exc
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 150, in handle_request
+    status, headers = self._receive_response(
+                      ~~~~~~~~~~~~~~~~~~~~~~^
+        request=request, stream_id=stream_id
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 294, in _receive_response
+    event = self._receive_stream_event(request, stream_id)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 336, in _receive_stream_event
+    self._receive_events(request, stream_id)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 364, in _receive_events
+    events = self._read_incoming_data(request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 455, in _read_incoming_data
+    raise exc
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 441, in _read_incoming_data
+    data = self._network_stream.read(self.READ_NUM_BYTES, timeout)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_backends\sync.py", line 126, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadError: [WinError 10035] A non-blocking socket operation could not be completed immediately
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\Soft Eng\GUARDGATE2\admin.py", line 472, in admin_occupancy
+    visitors = supabase.table("visitors").select("*").execute().data or []
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\postgrest\_sync\request_builder.py", line 90, in execute
+    r = send_with_retry(self.request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\postgrest\_sync\request_builder.py", line 51, in send_with_retry
+    resp = req.send(headers)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\postgrest\base_request_builder.py", line 98, in send
+    return self.session.request(
+           ~~~~~~~~~~~~~~~~~~~~^
+        self.http_method,
+        ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        auth=self.auth,
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadError: [WinError 10035] A non-blocking socket operation could not be completed immediately
+2026-11-04 16:57:31,296 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:31] "GET /api/admin/occupancy HTTP/1.1" 500 -
+2026-11-04 16:57:31,409 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:31] "GET /api/admin/stats HTTP/1.1" 500 -
+2026-11-04 16:57:36,136 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:36,522 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:41,055 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:41,382 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:46,376 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:46,380 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:51,055 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:51,379 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:57:56,073 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:57:56,456 - INFO - 127.0.0.1 - - [04/Nov/2026 16:57:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:01,045 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:01,390 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:06,061 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:06,403 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:11,064 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:11,415 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:16,064 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:16,444 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:21,050 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:21,407 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:26,052 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:26,376 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:31,382 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:31,385 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:36,044 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:36,392 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:41,062 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:41,437 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:46,050 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:46,383 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:51,053 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:51,412 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:58:56,093 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:58:56,490 - INFO - 127.0.0.1 - - [04/Nov/2026 16:58:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:01,075 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:01,422 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:06,122 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:06,486 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:11,408 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:11,411 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:16,057 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:16,381 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:21,397 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:21,401 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:26,395 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:26,398 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:31,048 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:31,398 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:36,066 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:36,386 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:41,406 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:41,411 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:46,472 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:46,476 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:51,074 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:51,504 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 16:59:56,474 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 16:59:56,481 - INFO - 127.0.0.1 - - [04/Nov/2026 16:59:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:01,076 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:01,461 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:06,065 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:06,421 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:11,403 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:11,406 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:16,432 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:16,448 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:21,056 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:21,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:26,390 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:26,393 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:31,046 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:31,380 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:36,050 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:36,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:41,088 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:41,439 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:46,087 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:46,446 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:51,061 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:51,391 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:00:56,048 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:00:56,390 - INFO - 127.0.0.1 - - [04/Nov/2026 17:00:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:01,087 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:01,423 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:06,053 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:06,401 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:11,383 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:11,388 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:16,079 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:16,437 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:21,086 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:21,415 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:26,059 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:26,390 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:31,057 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:31,387 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:36,064 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:36,428 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:41,098 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:41,447 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:46,111 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:46,442 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:51,066 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:51,391 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:01:56,136 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:01:56,472 - INFO - 127.0.0.1 - - [04/Nov/2026 17:01:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:01,049 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:01,380 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:06,064 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:06,399 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:11,064 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:11,414 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:16,064 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:16,408 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:21,092 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:21,456 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:26,061 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:26,409 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:31,084 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:31,428 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:36,059 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:36,415 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:41,073 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:41,408 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:46,065 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:46,401 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:51,076 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:51,415 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:02:56,109 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:02:56,461 - INFO - 127.0.0.1 - - [04/Nov/2026 17:02:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:01,058 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:01,400 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:06,067 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:06,396 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:11,060 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:11,399 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:16,125 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:16,441 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:21,404 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:21,409 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:26,043 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:26,376 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:31,054 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:31,391 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:36,165 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:36,495 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:41,073 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:41,410 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:46,045 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:46,388 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:51,059 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:51,408 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:03:56,071 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:03:56,399 - INFO - 127.0.0.1 - - [04/Nov/2026 17:03:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:01,406 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:01,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:06,104 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:06,440 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:11,051 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:11,562 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:16,061 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:16,391 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:21,071 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:21,404 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:26,057 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:26,417 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:31,446 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:31,449 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:36,066 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:36,415 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:41,436 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:41,439 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:46,056 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:46,424 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:51,049 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:51,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:04:56,447 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:04:56,453 - INFO - 127.0.0.1 - - [04/Nov/2026 17:04:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:01,100 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:01,476 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:06,075 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:06,417 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:11,090 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:11,425 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:16,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:16,410 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:21,063 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:21,398 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:26,054 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:26,417 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:31,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:31,410 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:36,115 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:36,475 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:41,052 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:41,391 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:46,081 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:46,436 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:51,079 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:51,422 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:05:56,067 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:05:56,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:05:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:01,065 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:01,392 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:06,054 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:06,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:11,376 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:11,379 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:16,390 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:16,725 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:21,443 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:21,798 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:22,393 - INFO -  * Detected change in 'c:\\Users\\user\\Desktop\\Soft Eng\\GUARDGATE2\\admin.py', reloading
+2026-11-04 17:06:24,971 - INFO -  * Restarting with stat
+2026-11-04 17:06:42,841 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.30.79:5000
+2026-11-04 17:06:42,843 - INFO - Press CTRL+C to quit
+2026-11-04 17:06:42,849 - INFO -  * Restarting with stat
+2026-11-04 17:06:47,511 - WARNING -  * Debugger is active!
+2026-11-04 17:06:47,517 - INFO -  * Debugger PIN: 119-448-259
+2026-11-04 17:06:48,372 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:48,376 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:51,377 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:51,718 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:06:56,383 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:06:56,725 - INFO - 127.0.0.1 - - [04/Nov/2026 17:06:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:07:01,412 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:07:01,750 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:07:06,375 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:07:06,864 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:07:11,355 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:07:11,701 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:07:19,668 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:19] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:07:20,126 - INFO - 127.0.0.1 - - [04/Nov/2026 17:07:20] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:07,130 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:07] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 17:08:07,542 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:07] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:07,780 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:07] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-04 17:08:07,971 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:07] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:07,974 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:07] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:08,779 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:09,158 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:09] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:13,082 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:13,437 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:18,105 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:18,473 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:23,081 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:23,415 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:28,420 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:28,423 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:33,114 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:33,447 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:38,428 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:38,433 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:43,135 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:43,495 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:48,082 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:48,452 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:53,168 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:53,563 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:08:58,087 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:08:58,452 - INFO - 127.0.0.1 - - [04/Nov/2026 17:08:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:03,095 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:03,439 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:08,103 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:08,646 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:13,086 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:13,464 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:18,114 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:18,472 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:23,115 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:23,470 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:28,095 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:28,555 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:33,413 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:33,416 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:38,124 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:38,537 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:43,490 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:43,494 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:48,067 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:48,427 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:53,436 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:53,469 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:09:58,113 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:09:58,471 - INFO - 127.0.0.1 - - [04/Nov/2026 17:09:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:03,080 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:03,460 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:08,091 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:08,483 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:13,082 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:13,446 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:18,131 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:18,476 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:23,097 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:23,432 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:28,078 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:28,468 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:33,155 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:33,544 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:38,104 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:38,478 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:43,101 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:43,490 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:48,138 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:48,511 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:53,135 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:53,497 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:10:58,097 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:10:58,431 - INFO - 127.0.0.1 - - [04/Nov/2026 17:10:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:03,110 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:03,449 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:08,089 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:08,429 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:13,069 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:13,445 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:18,089 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:18,417 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:23,146 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:23,484 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:28,076 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:28,430 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:33,429 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:33,433 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:38,086 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:38,435 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:43,123 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:43,536 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:48,156 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:48,586 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:53,081 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:53,415 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:11:58,079 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:11:58,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:11:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:03,110 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:03,507 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:08,088 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:08,436 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:13,463 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:13,467 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:18,408 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:18,412 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:23,089 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:23,497 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:28,246 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:28,585 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:33,091 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:33,450 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:38,094 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:38,515 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:43,087 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:43,437 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:48,139 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:48,510 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:53,417 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:53,421 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:12:58,478 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:12:58,481 - INFO - 127.0.0.1 - - [04/Nov/2026 17:12:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:03,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:03,411 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:08,081 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:08,449 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:13,442 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:13,447 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:18,100 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:18,443 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:23,096 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:23,444 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:28,230 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:28,567 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:33,315 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:33,664 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:38,095 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:38,464 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:43,170 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:43,619 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:48,065 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:48,411 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:53,101 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:53,452 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:13:58,139 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:13:58,471 - INFO - 127.0.0.1 - - [04/Nov/2026 17:13:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:03,115 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:03,465 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:08,095 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:08,443 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:13,089 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:13,429 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:18,141 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:18,481 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:23,100 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:23,458 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:28,260 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:28,958 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:33,114 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:33,470 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:38,076 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:38,432 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:43,078 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:43,584 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:48,082 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:48,442 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:53,069 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:53,405 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:14:58,116 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:14:58,479 - INFO - 127.0.0.1 - - [04/Nov/2026 17:14:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:03,084 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:03,422 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:08,099 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:08,441 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:13,070 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:13,454 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:18,084 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:18,642 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:23,083 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:23,447 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:28,411 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:28,416 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:33,100 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:33,470 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:38,078 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:38,414 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:43,075 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:43,425 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:48,438 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:48] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:48,442 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:48] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:53,116 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:53] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:53,458 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:53] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:15:58,095 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:58] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:15:58,494 - INFO - 127.0.0.1 - - [04/Nov/2026 17:15:58] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:03,077 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:03] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:03,427 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:03] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:08,099 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:08] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:08,470 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:08] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:13,094 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:13] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:13,445 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:13] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:18,089 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:18] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:18,431 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:18] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:23,207 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:23] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:23,717 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:23] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:28,092 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:28] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:28,500 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:28] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:33,076 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:33] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:33,495 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:33] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:38,071 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:38] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:38,437 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:38] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:43,096 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:16:43,496 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:16:45,005 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:45] "GET /admin-logout HTTP/1.1" 302 -
+2026-11-04 17:16:45,032 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:45] "GET /admin-login HTTP/1.1" 200 -
+2026-11-04 17:16:46,494 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:46] "GET /login HTTP/1.1" 200 -
+2026-11-04 17:16:48,266 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:48] "GET /guard_login HTTP/1.1" 200 -
+2026-11-04 17:16:51,156 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:51] "POST /guard_login HTTP/1.1" 302 -
+2026-11-04 17:16:51,180 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:51] "GET /guard HTTP/1.1" 200 -
+2026-11-04 17:16:51,739 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:51] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:16:52,301 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:16:52,306 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:52] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:16:54,624 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:16:55,861 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:55] "GET /api/students/summary?student_id=22-150700 HTTP/1.1" 200 -
+2026-11-04 17:16:56,618 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:56] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:16:57,623 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:57] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:16:59,777 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:59] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:16:59,869 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:59] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:16:59,871 - INFO - 127.0.0.1 - - [04/Nov/2026 17:16:59] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,111 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,565 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,591 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,745 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,747 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,761 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:00,887 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:01,280 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:01,282 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:01,652 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:01,654 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:01] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:03,633 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:03] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:04,605 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:04] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:04,761 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:04] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:04,956 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:04] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:04,957 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:04] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,116 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,217 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,338 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,565 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,704 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,843 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:05,924 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:05] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:06,054 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:06,055 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:06,319 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:06,652 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:06,654 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:06,655 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:06,727 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:06] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:09,163 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:09,165 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:09,479 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:09,491 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:09,495 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:09,500 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:09,874 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:09] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,145 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,200 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,201 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,210 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:10,466 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,506 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,558 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:10,568 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:10,570 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:10,584 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:10,592 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:10,600 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:10,606 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:10,914 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:10] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:11,205 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:11,209 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:11,218 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:11,562 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:11,739 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:11,741 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:11,899 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:11] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:12,236 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:12,586 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:12,941 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:13,293 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:15,624 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:15] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:16,858 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:16] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:17,780 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:17] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:17,817 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:17] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:17,895 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:17] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:17,949 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:17] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:17,952 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:17] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:18,111 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:18,578 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:18,579 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:18,626 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:18,784 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:18,792 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:18,794 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:18,809 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:18,815 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:18,828 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:18,835 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:18,980 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:18,995 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:18] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:19,322 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:19] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:19,355 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:19] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:19,656 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:19] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:19,658 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:19] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:20,000 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:20] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:20,354 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:20] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:20,699 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:20] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:21,033 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:21,646 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:21,648 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:21] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:21,725 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:21] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:24,618 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:24] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:24,622 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:24,628 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:24] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:24,969 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:26,623 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:26] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:26,625 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:26] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:27,616 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:28,735 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:28] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:17:28,747 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:28] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:29,076 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:29] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:30,625 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:30] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:17:30,630 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:31,646 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:31] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:33,613 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:33] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:36,616 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:36] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:36,622 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:36] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:36,718 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:36] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:39,647 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:39] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:41,676 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:41] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:42,625 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:42] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:45,272 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:45] "GET /api/students/summary?student_id=22-150515 HTTP/1.1" 200 -
+2026-11-04 17:17:45,620 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:45] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:46,632 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:46] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:48,649 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:48] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:51,018 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:51] "GET /api/students/summary?student_id=25-148720 HTTP/1.1" 200 -
+2026-11-04 17:17:51,625 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:51,628 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:51] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:17:51,730 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:51] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:17:55,661 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:55] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:17:58,390 - INFO - 127.0.0.1 - - [04/Nov/2026 17:17:58] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:01,382 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:04,041 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:04] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:07,036 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:07] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:18:07,533 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:10,390 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:10] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:13,414 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:14,661 - INFO -  * Detected change in 'c:\\Users\\user\\Desktop\\Soft Eng\\GUARDGATE2\\guard.py', reloading
+2026-11-04 17:18:16,346 - INFO -  * Restarting with stat
+2026-11-04 17:18:23,688 - WARNING -  * Debugger is active!
+2026-11-04 17:18:23,693 - INFO -  * Debugger PIN: 119-448-259
+2026-11-04 17:18:23,798 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:23] "GET /guard HTTP/1.1" 200 -
+2026-11-04 17:18:23,801 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:23] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:18:24,232 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:24,261 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:24] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:25,108 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:25] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:18:25,111 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:25] "GET /favicon.ico HTTP/1.1" 404 -
+2026-11-04 17:18:25,442 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:25] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:25,445 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:25] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:27,813 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:29,810 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:29] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:30,839 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:33,842 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:33] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:35,134 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:35] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:35,140 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:35] "GET /api/logs?college=CCIS HTTP/1.1" 200 -
+2026-11-04 17:18:35,143 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:35] "GET /api/students?college=CCIS&q= HTTP/1.1" 200 -
+2026-11-04 17:18:36,811 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:36] "GET /api/logs?college=CCIS HTTP/1.1" 200 -
+2026-11-04 17:18:39,871 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:39] "GET /api/students?college=CCIS&q= HTTP/1.1" 200 -
+2026-11-04 17:18:39,874 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:39] "GET /api/logs?college=CCIS HTTP/1.1" 200 -
+2026-11-04 17:18:40,079 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:40] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:18:42,809 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:42] "GET /api/logs?college=CCIS HTTP/1.1" 200 -
+2026-11-04 17:18:44,828 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:44] "GET /api/students?college=CCIS&q= HTTP/1.1" 200 -
+2026-11-04 17:18:45,209 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:45] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:45,212 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:45] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:45,808 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:45] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:48,811 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:48] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:49,853 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:49] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:51,817 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:54,378 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:54] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:54,468 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:54] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:54,597 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:54] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:54,789 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:54] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:54,922 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:54,946 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:54] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:55,050 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:55] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:18:55,071 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:55] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:18:55,126 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:55] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:55,486 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:55] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:55,488 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:55] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:18:57,814 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:57] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:18:59,825 - INFO - 127.0.0.1 - - [04/Nov/2026 17:18:59] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:19:00,373 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:00,375 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:00,392 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:00,396 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:00,694 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:00,714 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:00,728 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:00,741 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:00] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:01,042 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:01,065 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:01,075 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:01,077 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:01,085 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:01,425 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:01,828 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:01] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:03,853 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:03] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:04,859 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:04] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:19:06,374 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:06,374 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:06,702 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:06,706 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:06,717 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:06,729 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:06,738 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:06,743 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:06,754 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:06] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:07,040 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:07,046 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:07,139 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:07,143 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:07,386 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:07,387 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:19:07,757 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:07] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:08,172 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:08] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:08,532 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:08] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:09,856 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:09] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:19:09,859 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:09] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:10,069 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:10] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:12,808 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:12] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:12,813 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:12,819 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:12] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:13,163 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:13] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:14,820 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:14] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:19:15,152 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:15] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:19:15,164 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:15] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:15,494 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:15] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:15,846 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:15] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:18,831 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:18] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:19,813 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:19] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:19:21,819 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:24,810 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:24] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:19:24,815 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:19:25,078 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:25] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:19:25,241 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:25] "GET /admin-login HTTP/1.1" 200 -
+2026-11-04 17:19:33,700 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:33] "POST /admin-login HTTP/1.1" 302 -
+2026-11-04 17:19:33,719 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:33] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 17:19:35,543 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:35] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:19:35,919 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:35] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:19:39,518 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:39] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:19:39,853 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:39] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:19:44,906 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:44] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:19:44,910 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:44] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:19:49,527 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:49] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:19:49,860 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:49] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:19:54,507 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:54] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:19:54,850 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:54] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:19:59,841 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:59] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:19:59,845 - INFO - 127.0.0.1 - - [04/Nov/2026 17:19:59] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:04,903 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:04] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:04,907 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:04] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:09,520 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:09] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:09,875 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:09] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:14,525 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:14] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:14,886 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:14] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:19,536 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:19] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:19,906 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:19] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:24,539 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:24] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:24,914 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:24] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:29,523 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:29] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:29,864 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:29] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:34,545 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:34] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:34,900 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:34] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:39,867 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:39] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:39,872 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:39] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:44,508 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:44] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:44,871 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:44] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:49,538 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:49] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:49,870 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:49] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:54,542 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:54] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:54,881 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:54] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:20:59,871 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:59] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:20:59,877 - INFO - 127.0.0.1 - - [04/Nov/2026 17:20:59] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:04,525 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:04] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:04,864 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:04] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:09,560 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:09] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:09,937 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:09] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:14,505 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:14] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:14,860 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:14] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:19,849 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:19] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:19,855 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:19] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:24,511 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:24] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:24,845 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:24] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:29,206 - ERROR - Failed to load visitor occupancy
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+        pool_request.request
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 187, in handle_request
+    raise exc
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 150, in handle_request
+    status, headers = self._receive_response(
+                      ~~~~~~~~~~~~~~~~~~~~~~^
+        request=request, stream_id=stream_id
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 294, in _receive_response
+    event = self._receive_stream_event(request, stream_id)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 336, in _receive_stream_event
+    self._receive_events(request, stream_id)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpcore\_sync\http2.py", line 355, in _receive_events
+    raise RemoteProtocolError(self._connection_terminated)
+httpcore.RemoteProtocolError: <ConnectionTerminated error_code:1, last_stream_id:139, additional_data:None>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\Soft Eng\GUARDGATE2\admin.py", line 540, in admin_occupancy
+    visitors = supabase.table("visitors").select("*").execute().data or []
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\postgrest\_sync\request_builder.py", line 90, in execute
+    r = send_with_retry(self.request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\postgrest\_sync\request_builder.py", line 51, in send_with_retry
+    resp = req.send(headers)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\postgrest\base_request_builder.py", line 98, in send
+    return self.session.request(
+           ~~~~~~~~~~~~~~~~~~~~^
+        self.http_method,
+        ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        auth=self.auth,
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\user\Desktop\Soft Eng\GUARDGATE2\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.RemoteProtocolError: <ConnectionTerminated error_code:1, last_stream_id:139, additional_data:None>
+2026-11-04 17:21:29,250 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:29] "GET /api/admin/occupancy HTTP/1.1" 500 -
+2026-11-04 17:21:29,272 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:29] "GET /api/admin/stats HTTP/1.1" 500 -
+2026-11-04 17:21:34,967 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:34] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:34,972 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:34] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:39,511 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:39] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:39,870 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:39] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:44,515 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:44] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:44,856 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:44] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:49,505 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:49] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:49,846 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:49] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:54,617 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:54] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:55,004 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:55] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:21:59,518 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:59] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:21:59,846 - INFO - 127.0.0.1 - - [04/Nov/2026 17:21:59] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:22:04,513 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:04] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:22:04,837 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:04] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:22:09,520 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:09] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:22:09,852 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:09] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:22:14,841 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:14] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:22:14,845 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:14] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:22:19,512 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:19] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:22:19,558 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:19] "GET /guard HTTP/1.1" 200 -
+2026-11-04 17:22:19,865 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:19] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:22:20,013 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:20] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:20,454 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:20] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:20,458 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:20] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:22,994 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:25,081 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:25] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:25,976 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:25] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:26,304 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:26] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:26,322 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:26] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:26,664 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:26] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:26,669 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:26] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:26,692 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:26] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:27,379 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:27,733 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:27] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:27,744 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:27] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:28,426 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:28] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:28,788 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:28] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:28,798 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:28] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:29,063 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:29] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:29,429 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:29] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:29,797 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:29] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:29,810 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:29] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:30,019 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:30] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:30,179 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:30,540 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:30] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:30,554 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:30] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:30,923 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:31,303 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:31] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:31,318 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:31] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:31,658 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:31] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:32,023 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:32] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:34,987 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:34] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:34,990 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:34] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:34,995 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:34] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:36,953 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:36] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:36,970 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:36] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:37,303 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:37] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:37,687 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:37] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:37,695 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:37] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:37,970 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:37] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:38,418 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:38] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:38,750 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:38] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:38,760 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:38] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:39,143 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:39] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:39,144 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:39] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:39,206 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:39] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:39,528 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:39] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:39,980 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:39] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:40,966 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:40] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:44,001 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:44] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:44,338 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:44] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:45,011 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:45] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:45,165 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:45] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:45,904 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:45] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:46,259 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:46] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:46,964 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:46] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:48,256 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:48] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:48,258 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:48] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:48,286 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:48] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:48,604 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:48] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:48,607 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:48] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:49,973 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:49] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:49,975 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:49] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:50,045 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:50] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:52,598 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:52] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:52,617 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:52] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:52,984 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:52] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:22:52,989 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:52,994 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:52] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:22:53,235 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:53] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:53,817 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:53] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:53,819 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:53] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:54,524 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:54,526 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:54] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:54,970 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:54] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:22:55,300 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:55] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:22:55,976 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:55] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:58,978 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:58] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:22:59,978 - INFO - 127.0.0.1 - - [04/Nov/2026 17:22:59] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:23:00,580 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:00] "GET /admin-login HTTP/1.1" 302 -
+2026-11-04 17:23:00,598 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:00] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 17:23:01,637 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:01,641 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:06,263 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:06,601 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:11,277 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:11,661 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:16,241 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:16,592 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:21,261 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:21,597 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:26,262 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:26,599 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:31,261 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:31,595 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:36,279 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:36,622 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:36] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:41,626 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:41,630 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:46,122 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:46] "GET / HTTP/1.1" 302 -
+2026-11-04 17:23:46,151 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:46] "GET /login HTTP/1.1" 200 -
+2026-11-04 17:23:46,716 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:46,722 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:48,181 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:48] "GET /guard_login HTTP/1.1" 200 -
+2026-11-04 17:23:50,736 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:50] "POST /guard_login HTTP/1.1" 302 -
+2026-11-04 17:23:50,768 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:50] "GET /guard HTTP/1.1" 200 -
+2026-11-04 17:23:51,135 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:51] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:23:51,374 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:51,546 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:51] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:23:51,550 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:23:51,735 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:54,210 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:23:56,272 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:23:56,609 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:23:57,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:23:57] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:00,449 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:00] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:01,292 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:01,626 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:03,412 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:03] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:06,123 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:06] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:24:06,314 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:06] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:06,316 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:06] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:24:06,442 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:06,803 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:09,194 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:09] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:11,200 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:11] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:24:11,375 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:11,578 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:11] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:24:11,594 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:11] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:24:11,714 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:11,927 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:11] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:12,295 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:15,387 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:15] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:16,293 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:16,637 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:18,403 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:18] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:21,116 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:21] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:24:21,203 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:21] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:24:21,207 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:21,370 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:21,724 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:21] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:23,057 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:23] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:24:23,068 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:23] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:24:23,419 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:23] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:24,383 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:24] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:26,268 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:26] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:26,612 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:26] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:27,385 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:27] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:30,374 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:30] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:31,268 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:31] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:31,656 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:31] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:33,395 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:33] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:36,473 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:36] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:36,654 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:36] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:37,032 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:37] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:24:37,746 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:37] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:39,420 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:39] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:41,287 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:41] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:41,678 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:41] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:42,410 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:42] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:45,439 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:45] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:46,307 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:46] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:46,729 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:48,418 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:48] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:51,306 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:51] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:51,413 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:51,660 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:51] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:52,033 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:52] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:24:54,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:24:56,251 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:56] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:24:56,619 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:56] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:24:57,379 - INFO - 127.0.0.1 - - [04/Nov/2026 17:24:57] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:00,407 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:00] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:01,644 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:01] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:01,648 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:01] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:03,362 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:03] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:06,272 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:06] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:06,384 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:06] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:06,622 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:06] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:07,035 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:07] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:25:09,398 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:09] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:11,286 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:11] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:11,680 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:12,377 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:12] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:15,394 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:15] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:16,275 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:16,664 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:18,404 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:18] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:21,287 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:21] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:21,377 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:21] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:22,034 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:22] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:25:22,053 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:22] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:38,008 - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.10.30.79:5000
+2026-11-04 17:25:38,008 - INFO - Press CTRL+C to quit
+2026-11-04 17:25:38,015 - INFO -  * Restarting with stat
+2026-11-04 17:25:42,756 - WARNING -  * Debugger is active!
+2026-11-04 17:25:42,760 - INFO -  * Debugger PIN: 119-448-259
+2026-11-04 17:25:43,408 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:43] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:43,743 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:43] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:45,074 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:45] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 17:25:45,691 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:45] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:25:46,037 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:46] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:25:48,581 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:48] "GET /guard HTTP/1.1" 200 -
+2026-11-04 17:25:48,930 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:48] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:25:49,447 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:49] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:49,462 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:49] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:25:51,982 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:51] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:25:51,984 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:51] "POST /api/logs/manual HTTP/1.1" 400 -
+2026-11-04 17:25:51,991 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:51] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:51,997 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:51] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:25:52,395 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:52] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:54,032 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:54] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:25:54,595 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:54] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:25:54,609 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:54] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:25:54,993 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:54] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:56,439 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:56] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:25:58,456 - INFO - 127.0.0.1 - - [04/Nov/2026 17:25:58] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:00,992 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:00] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:03,640 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:03] "GET /api/students/summary?student_id=23-030607 HTTP/1.1" 200 -
+2026-11-04 17:26:03,912 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:03] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:26:04,169 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:04] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:26:04,175 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:04] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:05,295 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:05] "GET /admin-login HTTP/1.1" 302 -
+2026-11-04 17:26:05,317 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:05] "GET /admin-dashboard HTTP/1.1" 200 -
+2026-11-04 17:26:07,060 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:07] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:26:07,065 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:07] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:26:10,945 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:10] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:26:11,465 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:11] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:26:15,725 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:15] "GET /guard HTTP/1.1" 200 -
+2026-11-04 17:26:16,077 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:16] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:26:16,539 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:16] "GET /api/admin/stats HTTP/1.1" 200 -
+2026-11-04 17:26:16,873 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:16] "GET /api/admin/occupancy HTTP/1.1" 200 -
+2026-11-04 17:26:16,925 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:16] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:16,927 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:16] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:26:19,030 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:19] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:26:19,439 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:19] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:19,879 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:19] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:21,177 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:21] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:26:22,286 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:22,515 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:22] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:26:22,527 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:22] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:26:22,877 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:22] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:23,224 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:23] "POST /api/logs/manual HTTP/1.1" 200 -
+2026-11-04 17:26:23,234 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:23] "GET /api/overstay HTTP/1.1" 200 -
+2026-11-04 17:26:23,594 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:23] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:25,134 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:25] "GET /api/logs?college=ALL HTTP/1.1" 200 -
+2026-11-04 17:26:26,176 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:26] "GET /api/students?college=ALL&q= HTTP/1.1" 200 -
+2026-11-04 17:26:28,372 - INFO - 127.0.0.1 - - [04/Nov/2026 17:26:28] "GET /api/logs?college=ALL HTTP/1.1" 200 -

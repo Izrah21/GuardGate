@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, render_template_string, request, jsonify, session, redirect, url_for
 from supabase import create_client, Client
 
@@ -18,7 +19,6 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dormitory Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #f2f7f3 0%, #eaf3ed 50%, #f4f8f5 100%); }
@@ -60,7 +60,11 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <div class="relative shrink-0 flex items-center gap-3">
+            <div class="relative shrink-0 flex items-center gap-4">
+                <div id="live-clock" class="text-right leading-tight">
+                    <p data-time class="text-sm font-bold text-emerald-950 tabular-nums"></p>
+                    <p data-date class="text-[11px] font-medium text-slate-500"></p>
+                </div>
                 <button type="button" id="nav-menu-btn" onclick="toggleNavMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="nav-menu-panel" aria-label="Open menu" class="w-10 h-10 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center shadow-sm border border-emerald-900/20 transition focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
@@ -84,13 +88,60 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
         </header>
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-900/10 mb-6">
-            <h2 class="text-sm font-bold text-emerald-950 mb-4 flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                Real-time: Who Is Inside the Dormitory (Per College)
-            </h2>
-            <div class="w-full h-64 flex justify-center">
-                <canvas id="dormChart"></canvas>
+            <div class="mb-4">
+                <h2 class="text-sm font-bold text-emerald-950 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                    Real-time: Dormitory Visitors
+                </h2>
+                <p id="occupancy-sub" class="text-xs text-slate-500 mt-1"></p>
             </div>
+            <div class="flex flex-col sm:flex-row sm:items-end gap-3 mb-5 pb-5 border-b border-slate-100">
+                <div class="sm:w-60 shrink-0">
+                    <label for="occupancy-filter" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">View</label>
+                    <div class="relative">
+                        <select id="occupancy-filter" autocomplete="off" onchange="setOccupancyView(this.value)" class="w-full appearance-none bg-white border border-slate-300 rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-800 shadow-sm cursor-pointer outline-none transition hover:border-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                            <option value="inside">Inside</option>
+                            <option value="out">Out</option>
+                            <option value="overstay">Overstay (8 PM to 6 AM)</option>
+                        </select>
+                        <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+                <div class="sm:w-52 shrink-0">
+                    <label for="category-filter" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category</label>
+                    <div class="relative">
+                        <select id="category-filter" autocomplete="off" onchange="filterCategory(this.value)" class="w-full appearance-none bg-white border border-slate-300 rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-800 shadow-sm cursor-pointer outline-none transition hover:border-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                            <option value="ALL">All Records</option>
+                            <optgroup label="Colleges">
+                                <option value="CCIS">CCIS</option>
+                                <option value="CAS">CAS</option>
+                                <option value="COE">COE</option>
+                                <option value="CBEA">CBEA</option>
+                                <option value="CAFSD">CAFSD</option>
+                                <option value="CHS">CHS</option>
+                                <option value="COL">COL</option>
+                                <option value="CASAT">CASAT</option>
+                                <option value="CIT">CIT</option>
+                                <option value="CTE">CTE</option>
+                            </optgroup>
+                            <optgroup label="Other Categories">
+                                <option value="Faculty">Faculty</option>
+                                <option value="Parent">Parent</option>
+                                <option value="Others">Others</option>
+                            </optgroup>
+                        </select>
+                        <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <label for="search-input" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Search</label>
+                    <div class="relative">
+                        <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="search-input" oninput="renderOccupancy()" placeholder="Search name" autocomplete="off" class="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-800 shadow-sm outline-none transition hover:border-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600">
+                    </div>
+                </div>
+            </div>
+            <ul id="occupancy-list" class="max-h-96 overflow-y-auto grid grid-cols-1 xl:grid-cols-2 gap-2"></ul>
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-900/10">
@@ -135,8 +186,6 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
     <div id="toast" class="hidden"></div>
 
     <script>
-        let dormChart = null;
-
         function loadDashboardData() {
             fetch('/api/admin/stats')
                 .then(r => r.json())
@@ -159,35 +208,111 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                                 </td>
                             </tr>`;
                     });
-                    updateChart(data.inside_count);
                 }).catch(() => {});
         }
 
-        function initChart() {
-            const ctx = document.getElementById('dormChart').getContext('2d');
-            dormChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['CCIS', 'CAS', 'COE', 'CBEA', 'CAFSD', 'CHS', 'COL', 'CASAT', 'CIT', 'CTE', 'Others'],
-                    datasets: [{
-                        label: 'Currently Inside',
-                        data: Array(11).fill(0),
-                        backgroundColor: '#047857',
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
+        let occupancyData = { inside: [], out: [], overstay: [], overstay_active: false, cutoff: '', now: '' };
+        let occupancyView = 'inside';
+        let currentCategory = 'ALL';
+
+        const OCCUPANCY_LABELS = { inside: 'Inside', out: 'Out', overstay: 'Overstay (8 PM to 6 AM)' };
+        const OCCUPANCY_SUBS = {
+            inside: 'Visitors currently checked in to the dormitory.',
+            out: 'Visitors whose latest record is a Time Out.',
+            overstay: 'Visitors still inside the dormitory during the night curfew period, 8 PM to 6 AM.'
+        };
+
+        function setOccupancyView(view) {
+            occupancyView = view;
+            renderOccupancy();
+        }
+
+        function filterCategory(code) {
+            currentCategory = code;
+            renderOccupancy();
+        }
+
+        function normalizeSearch(value) {
+            return String(value == null ? '' : value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+
+        function applyOccupancyFilters(list) {
+            const q = normalizeSearch(document.getElementById('search-input').value);
+            return list.filter(v => {
+                if (currentCategory !== 'ALL' && v.college !== currentCategory) return false;
+                if (!q) return true;
+                return normalizeSearch(v.name + ' ' + v.student_id + ' ' + (v.course_year || '')).includes(q);
             });
         }
 
-        function updateChart(counts) {
-            if (!dormChart) return;
-            dormChart.data.datasets[0].data = [
-                counts.CCIS || 0, counts.CAS || 0, counts.COE || 0, counts.CBEA || 0,
-                counts.CAFSD || 0, counts.CHS || 0, counts.COL || 0, counts.CASAT || 0,
-                counts.CIT || 0, counts.CTE || 0, counts.Others || 0
-            ];
-            dormChart.update();
+        function occupancyEmptyMessage(view) {
+            const q = document.getElementById('search-input').value.trim();
+            if (q || currentCategory !== 'ALL') return 'No visitors match the current filters.';
+            if (view === 'inside') return 'No visitors are currently inside.';
+            if (view === 'out') return 'No visitors have checked out yet.';
+            return occupancyData.overstay_active
+                ? 'No visitors are overstaying.'
+                : 'Overstay monitoring runs from 8 PM to 6 AM and is not active right now.';
+        }
+
+        function occupancyItem(v, view) {
+            const name = escapeHtml(v.name);
+            const id = escapeHtml(v.student_id);
+            const details = escapeHtml(v.college) + ' | ' + escapeHtml(v.course_year || '-');
+            let card = 'border-slate-200 bg-white';
+            let badge = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+            let badgeText = 'Time In';
+            let line = '<p class="text-[11px] text-slate-500 truncate">' + details + ' | In since ' + escapeHtml(v.time) + '</p>';
+
+            if (view === 'out') {
+                badge = 'bg-rose-100 text-rose-800 border-rose-200';
+                badgeText = 'Time Out';
+                line = '<p class="text-[11px] text-slate-500 truncate">' + details + ' | Out at ' + escapeHtml(v.time) + '</p>';
+            } else if (view === 'overstay') {
+                card = 'border-rose-200 bg-rose-50/60';
+                badge = 'bg-rose-100 text-rose-800 border-rose-200';
+                badgeText = 'Overstay';
+                const warn = v.stale
+                    ? 'No Time Out since ' + escapeHtml(v.time)
+                    : escapeHtml(v.over_label) + ' past ' + escapeHtml(occupancyData.cutoff);
+                line = '<p class="text-[11px] text-slate-500 truncate">' + details + ' | In since ' + escapeHtml(v.time) + '</p>' +
+                    '<p class="text-[11px] font-bold text-rose-700 mt-0.5">' + warn + '</p>';
+            }
+
+            return '<li class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 ' + card + '">' +
+                '<div class="min-w-0">' +
+                '<p class="text-xs font-bold text-slate-900 truncate">' + name + ' <span class="text-slate-400 font-medium">(' + id + ')</span></p>' +
+                line +
+                '</div>' +
+                '<span class="shrink-0 px-2 py-0.5 rounded-md font-semibold text-[11px] border ' + badge + '">' + badgeText + '</span>' +
+                '</li>';
+        }
+
+        function renderOccupancy() {
+            const select = document.getElementById('occupancy-filter');
+            Array.from(select.options).forEach(opt => {
+                opt.textContent = OCCUPANCY_LABELS[opt.value] + ' (' + applyOccupancyFilters(occupancyData[opt.value] || []).length + ')';
+            });
+            select.value = occupancyView;
+            document.getElementById('occupancy-sub').innerText = OCCUPANCY_SUBS[occupancyView];
+
+            const list = applyOccupancyFilters(occupancyData[occupancyView] || []);
+            const container = document.getElementById('occupancy-list');
+            if (list.length === 0) {
+                container.innerHTML = '<li class="xl:col-span-2 p-6 text-center text-slate-400 text-xs">' + occupancyEmptyMessage(occupancyView) + '</li>';
+                return;
+            }
+            container.innerHTML = list.map(v => occupancyItem(v, occupancyView)).join('');
+        }
+
+        function loadOccupancy() {
+            fetch('/api/admin/occupancy')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.inside) return;
+                    occupancyData = data;
+                    renderOccupancy();
+                }).catch(() => {});
         }
 
         let pendingDeleteId = null;
@@ -250,9 +375,20 @@ ADMIN_DASHBOARD_TEMPLATE = """<!DOCTYPE html>
             if (e.key === 'Escape') closeDeleteModal();
         });
 
+        function tickClock() {
+            const el = document.getElementById('live-clock');
+            if (!el) return;
+            const d = new Date();
+            const opt = { timeZone: 'Asia/Manila' };
+            el.querySelector('[data-time]').textContent = d.toLocaleTimeString('en-PH', { ...opt, hour: 'numeric', minute: '2-digit', second: '2-digit' });
+            el.querySelector('[data-date]').textContent = d.toLocaleDateString('en-PH', { ...opt, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        document.addEventListener('DOMContentLoaded', () => { tickClock(); setInterval(tickClock, 1000); });
+
         window.onload = () => {
-            initChart();
+            loadOccupancy();
             loadDashboardData();
+            setInterval(loadOccupancy, 5000);
             setInterval(loadDashboardData, 5000);
         };
     </script>
@@ -326,21 +462,140 @@ def admin_dashboard():
 def admin_stats():
     if not session.get('is_admin'):
         return jsonify({"error": "Unauthorized"}), 401
-    
-    visitors = supabase.table("visitors").select("*").execute().data or []
-    inside_counts = {"CCIS": 0, "CAS": 0, "COE": 0, "CBEA": 0, "CAFSD": 0, "CHS": 0, "COL": 0, "CASAT": 0, "CIT": 0, "CTE": 0, "Others": 0}
-    
-    for v in visitors:
-        s_id = v["student_id"]
-        logs = supabase.table("logs").select("action").eq("student_id", s_id).order("id", desc=True).limit(1).execute().data
-        if logs and logs[0]["action"] == "Time In":
-            col = v.get("college", "Others")
-            if col in inside_counts:
-                inside_counts[col] += 1
-            else:
-                inside_counts["Others"] += 1
 
-    return jsonify({"visitors": visitors, "inside_count": inside_counts})
+    visitors = supabase.table("visitors").select("*").execute().data or []
+    return jsonify({"visitors": visitors})
+
+CURFEW_HOUR = 20
+ALERT_END_HOUR = 6
+CURFEW_LOOKBACK_DAYS = 7
+PH_TZ = timezone(timedelta(hours=8))
+_TS_FORMATS = ("%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p")
+
+def _parse_ts(value):
+    text = str(value or "").strip()
+    for fmt in _TS_FORMATS:
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+def _pretty_name(raw):
+    parts = [p.strip() for p in (raw or "").split(",")]
+    parts = [p for p in parts if p and p.upper() != "N/A"]
+    if len(parts) <= 1:
+        return parts[0] if parts else (raw or "-")
+    return f"{parts[0]}, {' '.join(parts[1:])}"
+
+def _over_label(minutes):
+    minutes = max(0, int(minutes))
+    hours, mins = divmod(minutes, 60)
+    if hours and mins:
+        return f"{hours}h {mins}m"
+    return f"{hours}h" if hours else f"{mins}m"
+
+def _curfew_start(now):
+    midnight = datetime.combine(now.date(), datetime.min.time())
+    if now.hour >= CURFEW_HOUR:
+        return midnight.replace(hour=CURFEW_HOUR)
+    if now.hour < ALERT_END_HOUR:
+        return (midnight - timedelta(days=1)).replace(hour=CURFEW_HOUR)
+    return None
+
+def _latest_actions(visitor_ids):
+    latest = {}
+    remaining = set(visitor_ids)
+    page_size = 1000
+    offset = 0
+    while remaining:
+        batch = (
+            supabase.table("logs")
+            .select("student_id,action,timestamp")
+            .in_("action", ["Time In", "Time Out"])
+            .order("id", desc=True)
+            .range(offset, offset + page_size - 1)
+            .execute()
+            .data
+        ) or []
+        for row in batch:
+            sid = row.get("student_id")
+            if sid in remaining:
+                latest[sid] = row
+                remaining.discard(sid)
+        if len(batch) < page_size:
+            break
+        offset += page_size
+    return latest
+
+@admin_bp.route('/api/admin/occupancy')
+def admin_occupancy():
+    if not session.get('is_admin'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    now = datetime.now(PH_TZ).replace(tzinfo=None)
+    curfew = _curfew_start(now)
+
+    try:
+        visitors = supabase.table("visitors").select("*").execute().data or []
+        latest = _latest_actions([v["student_id"] for v in visitors])
+    except Exception:
+        logging.exception("Failed to load visitor occupancy")
+        return jsonify({"message": "Failed to load visitor occupancy."}), 500
+
+    def stamp(ts):
+        if ts is None:
+            return "-"
+        if ts.date() == now.date():
+            return ts.strftime("%I:%M %p")
+        return ts.strftime("%b %d, %I:%M %p")
+
+    inside, out, overstay = [], [], []
+    for v in visitors:
+        row = latest.get(v["student_id"])
+        if not row:
+            continue
+        ts = _parse_ts(row.get("timestamp"))
+        entry = {
+            "student_id": v["student_id"],
+            "name": _pretty_name(v.get("normalized_name")),
+            "college": v.get("college") or "-",
+            "course_year": v.get("course_year"),
+            "time": stamp(ts),
+            "_ts": ts or datetime.min,
+        }
+        if row.get("action") == "Time Out":
+            out.append(entry)
+            continue
+        inside.append(entry)
+        if curfew is None or ts is None or ts > now:
+            continue
+        if ts < now - timedelta(days=CURFEW_LOOKBACK_DAYS):
+            continue
+        minutes_over = (now - curfew).total_seconds() / 60
+        overstay.append({
+            **entry,
+            "stale": ts.date() < curfew.date(),
+            "minutes_over": int(minutes_over),
+            "over_label": _over_label(minutes_over),
+        })
+
+    inside.sort(key=lambda e: e["_ts"], reverse=True)
+    out.sort(key=lambda e: e["_ts"], reverse=True)
+    overstay.sort(key=lambda e: (not e["stale"], -e["minutes_over"], e["name"].lower()))
+
+    for group in (inside, out, overstay):
+        for e in group:
+            e.pop("_ts", None)
+
+    return jsonify({
+        "inside": inside,
+        "out": out,
+        "overstay": overstay,
+        "overstay_active": curfew is not None,
+        "cutoff": "8:00 PM",
+        "now": now.strftime("%I:%M %p").lstrip("0"),
+    })
 
 def _face_file_name(visitor, student_id):
     candidate = ""
